@@ -1,0 +1,31 @@
+# Gradle
+.gradle/
+build/
+
+# Cargo
+target/
+
+# sbt
+project/target
+.bsp/
+
+# Go
+bin/
+
+# Node
+node_modules/
+dist/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets et journaux
+.env
+*.log
+deploy/compose/.env
