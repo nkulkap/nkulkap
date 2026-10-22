@@ -36,7 +36,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           submodules: recursive
-          fetch-depth: 1
+          # Historique complet : Fineract calcule sa version par git et échoue sur un clone superficiel.
+          fetch-depth: 0
 
       - uses: actions/setup-java@v6
         with:
