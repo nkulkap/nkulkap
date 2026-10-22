@@ -102,7 +102,7 @@ Même corps. → 200, même forme de réponse. Erreur : 403 `error.msg.savingsac
 
 ### `force-withdrawal`
 
-Même corps. Sans configuration particulière, il est refusé comme un retrait ordinaire (403 solde insuffisant). Conditions d'activation, permission et écritures : [force-withdrawal.md](force-withdrawal.md) (étape 1.8).
+Même corps. Désactivé par défaut : il se comporte alors comme un retrait ordinaire (403 solde insuffisant au-delà du solde). Activation par la configuration globale `allow-force-withdrawal-on-savings-account` (plafond dans `value`), permission `FORCE_WITHDRAWAL_SAVINGSACCOUNT`, écritures : [force-withdrawal.md](force-withdrawal.md) (étape 1.8).
 
 ## Prêts : `POST /loans/{id}/transactions?command=repayment`
 
