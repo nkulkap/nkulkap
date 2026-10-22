@@ -35,7 +35,7 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 
 ### Poste de développement (Windows, 7,4 Go de RAM)
 
-- JDK 25 (`Microsoft.OpenJDK.25`) installé ; GNU Make toujours absent.
+- JDK 25 (`Microsoft.OpenJDK.25`) installé ; GNU Make 4.4.1 installé par winget (`ezwinports.make`, sous `%LOCALAPPDATA%\Microsoft\WinGet\Packages\ezwinports.make_*\bin`), à lancer depuis Git Bash. `make help` et `make bootstrap` vérifiés sur le poste le 2026-10-22.
 - Docker Desktop (WSL2) limité à 5 Go par `%USERPROFILE%\.wslconfig` (`memory=5GB`, `swap=8GB`).
 - `~/.gradle/gradle.properties` ramène Gradle à `-Xmx3g`, 2 workers, sans parallélisme : le `-Xmx12g` de Fineract fait planter la JVM sur ce poste.
 - Le sous-module Fineract doit être extrait en LF (`core.autocrlf=false`) : en CRLF, le build réécrit les sources et échoue. `make bootstrap` le règle.
@@ -53,7 +53,6 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 - Fusionnée dans `main` le 2026-10-22 : [PR #1](https://github.com/nkulkap/nkulkap/pull/1), commit de fusion `75bab1b`.
 - `e2e-nightly` actif sur `main` (planifié chaque nuit à 01:00 UTC) ; déclenchement manuel réussi ([exécution 39786846059](https://github.com/nkulkap/nkulkap/actions/runs/39786846059)).
 - `CLAUDE.md` fait lire la fiche de la phase en cours plutôt que le cahier complet (accord de l'utilisateur du 2026-10-22).
-- Seul point ouvert : GNU Make absent du poste Windows. `make help` a été vérifié par sa commande seule ; `make bootstrap` et `make build` sont vérifiés sous Linux par la CI.
 
 ## Écarts
 
