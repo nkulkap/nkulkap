@@ -1,0 +1,16 @@
+{
+  "intentId": "0192f1f0-2222-7ccc-8ddd-000000000001",
+  "operation": "CASH_IN",
+  "operator": "MTN_MOMO",
+  "msisdn": "+237699000001",
+  "account": {"kind": "SAVINGS", "id": "55231"},
+  "amount": 15000,
+  "feeAmount": null,
+  "currency": "XAF",
+  "previousState": "SUCCEEDED",
+  "state": "POSTED",
+  "operatorReference": "FICTIF-MTN-778899",
+  "fineractTxnId": 991300,
+  "reason": null,
+  "changedAt": "2026-10-21T11:05:30Z"
+}

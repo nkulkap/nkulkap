@@ -1,0 +1,41 @@
+# Chaîne des contrats partagés (OpenAPI et schémas d'événements Avro) : appelle make lint-contracts.
+# Logique dans le Makefile uniquement (ADR-014).
+name: ci-contracts
+
+on:
+  push:
+    paths:
+      - "contracts/**"
+      - "Makefile"
+      - ".github/workflows/ci-contracts.yml"
+  pull_request:
+    paths:
+      - "contracts/**"
+      - "Makefile"
+      - ".github/workflows/ci-contracts.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-contracts-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: contracts/package-lock.json
+
+      - name: Valider les contrats
+        run: make lint-contracts

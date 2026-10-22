@@ -1,0 +1,16 @@
+{
+  "tourneeId": 501,
+  "collecteurId": 42,
+  "staffId": 7,
+  "officeId": 2,
+  "dateTournee": "2026-10-21",
+  "previousState": "SOUMISE",
+  "state": "EN_ECART",
+  "operationCount": 37,
+  "totalComptabilise": 74000,
+  "totalDeclare": 73500,
+  "ecart": -500,
+  "currency": "XAF",
+  "actorUserId": "FICTIF-caissier-3",
+  "changedAt": "2026-10-21T17:30:00Z"
+}

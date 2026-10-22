@@ -1,0 +1,22 @@
+{
+  "type": "record",
+  "name": "OpRejectedV1",
+  "namespace": "cm.nkulkap.events.op.v1",
+  "doc": "op.rejected : opération synchronisée refusée par une règle métier et placée en revue superviseur (REJECTED_NEEDS_REVIEW, annexe C.4).",
+  "fields": [
+    {"name": "opId", "doc": "Identifiant de l'opération (UUIDv7).", "type": "string"},
+    {"name": "opType", "doc": "Type d'opération (annexe C.3).", "type": "cm.nkulkap.events.op.v1.OpTypeV1"},
+    {"name": "deviceId", "doc": "Appareil émetteur.", "type": "string"},
+    {"name": "userId", "doc": "Utilisateur Keycloak ayant saisi l'opération.", "type": "string"},
+    {"name": "officeId", "doc": "Agence Fineract.", "type": "long"},
+    {"name": "account", "doc": "Compte visé.", "type": "cm.nkulkap.events.common.v1.AccountRefV1"},
+    {"name": "amount", "doc": "Montant en unités entières de la devise.", "type": "long"},
+    {"name": "currency", "doc": "Code ISO 4217 (XAF).", "type": "string"},
+    {"name": "rejectCode", "doc": "Motif métier du refus (annexe C.3).", "type": {"type": "enum", "name": "BusinessRejectCodeV1", "symbols": ["ACCOUNT_CLOSED", "ACCOUNT_BLOCKED", "CARNET_INACTIVE", "INSUFFICIENT_FUNDS", "LIMIT_EXCEEDED", "LOAN_CLOSED", "OVERPAYMENT", "CYCLE_CLOSED", "NOT_MEMBER", "DUPLICATE_IDENTITY", "KYC_INCOMPLETE"]}},
+    {"name": "fineractErrorCode", "doc": "Code d'erreur Fineract d'origine (userMessageGlobalisationCode), pour diagnostic.", "type": ["null", "string"], "default": null},
+    {"name": "createdAtDevice", "doc": "Horodatage de saisie sur l'appareil, ISO 8601 avec décalage.", "type": "string"},
+    {"name": "receivedAt", "doc": "Réception par nkulkap-sync, UTC, ISO 8601.", "type": "string"},
+    {"name": "rejectedAt", "doc": "Instant du refus, UTC, ISO 8601.", "type": "string"},
+    {"name": "gps", "doc": "Position à la saisie, si disponible.", "type": ["null", "cm.nkulkap.events.common.v1.GpsV1"], "default": null}
+  ]
+}

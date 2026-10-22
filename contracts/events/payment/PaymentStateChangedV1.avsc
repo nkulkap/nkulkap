@@ -1,0 +1,22 @@
+{
+  "type": "record",
+  "name": "PaymentStateChangedV1",
+  "namespace": "cm.nkulkap.events.payment.v1",
+  "doc": "payment.<état> : changement d'état d'une intention de paiement mobile money (machine à états D.1, FR-L6-03). Le type d'enveloppe vaut payment. suivi de l'état en minuscules (payment.succeeded, payment.posted...).",
+  "fields": [
+    {"name": "intentId", "doc": "Identifiant de l'intention (UUID) : X-Reference-Id chez l'opérateur et Idempotency-Key côté Fineract (FR-L6-04).", "type": "string"},
+    {"name": "operation", "doc": "Nature de l'opération (FR-L6-01).", "type": {"type": "enum", "name": "PaymentOperationV1", "symbols": ["CASH_IN", "REPAYMENT", "TONTINE", "CASH_OUT", "DISBURSEMENT"]}},
+    {"name": "operator", "doc": "Opérateur mobile money.", "type": {"type": "enum", "name": "MobileOperatorV1", "symbols": ["MTN_MOMO", "ORANGE_MONEY"]}},
+    {"name": "msisdn", "doc": "Numéro du portefeuille, format E.164 (+2376XXXXXXXX).", "type": "string"},
+    {"name": "account", "doc": "Compte NKULKAP crédité ou débité.", "type": "cm.nkulkap.events.common.v1.AccountRefV1"},
+    {"name": "amount", "doc": "Montant en unités entières de la devise.", "type": "long"},
+    {"name": "feeAmount", "doc": "Frais TTC appliqués (FR-L6-10), en unités entières.", "type": ["null", "long"], "default": null},
+    {"name": "currency", "doc": "Code ISO 4217 (XAF).", "type": "string"},
+    {"name": "previousState", "doc": "État précédent ; null à la création.", "type": ["null", {"type": "enum", "name": "PaymentStateV1", "symbols": ["CREATED", "SUBMITTED", "PENDING", "SUCCEEDED", "FAILED", "EXPIRED", "UNKNOWN", "POSTED", "REVERSED"]}], "default": null},
+    {"name": "state", "doc": "Nouvel état.", "type": "cm.nkulkap.events.payment.v1.PaymentStateV1"},
+    {"name": "operatorReference", "doc": "Référence de la transaction chez l'opérateur, si connue.", "type": ["null", "string"], "default": null},
+    {"name": "fineractTxnId", "doc": "Transaction Fineract, aux états POSTED ou REVERSED.", "type": ["null", "long"], "default": null},
+    {"name": "reason", "doc": "Code de motif (échec opérateur, expiration, rapprochement).", "type": ["null", "string"], "default": null},
+    {"name": "changedAt", "doc": "Instant du changement d'état, UTC, ISO 8601.", "type": "string"}
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "type": "record",
+  "name": "AccountRefV1",
+  "namespace": "cm.nkulkap.events.common.v1",
+  "doc": "Référence d'un compte Fineract (ou d'un client temporaire d'appareil).",
+  "fields": [
+    {"name": "kind", "doc": "Nature du compte.", "type": {"type": "enum", "name": "AccountKindV1", "symbols": ["SAVINGS", "LOAN", "TONTINE", "CLIENT_TEMP"]}},
+    {"name": "id", "doc": "Identifiant Fineract, ou identifiant temporaire pour CLIENT_TEMP.", "type": "string"}
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "GpsV1",
+  "namespace": "cm.nkulkap.events.common.v1",
+  "doc": "Position relevée par l'appareil à la saisie.",
+  "fields": [
+    {"name": "lat", "doc": "Latitude en degrés décimaux.", "type": "double"},
+    {"name": "lon", "doc": "Longitude en degrés décimaux.", "type": "double"},
+    {"name": "accM", "doc": "Précision en mètres.", "type": ["null", "int"], "default": null}
+  ]
+}

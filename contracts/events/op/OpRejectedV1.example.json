@@ -1,0 +1,16 @@
+{
+  "opId": "0192f1e2-1111-7aaa-8bbb-000000000002",
+  "opType": "EPARGNE_RETRAIT",
+  "deviceId": "dev_8Hk2",
+  "userId": "FICTIF-collecteur-42",
+  "officeId": 2,
+  "account": {"kind": "SAVINGS", "id": "55231"},
+  "amount": 60000,
+  "currency": "XAF",
+  "rejectCode": "INSUFFICIENT_FUNDS",
+  "fineractErrorCode": "error.msg.savingsaccount.transaction.insufficient.account.balance",
+  "createdAtDevice": "2026-10-21T10:02:00+01:00",
+  "receivedAt": "2026-10-21T16:42:11Z",
+  "rejectedAt": "2026-10-21T16:42:14Z",
+  "gps": null
+}

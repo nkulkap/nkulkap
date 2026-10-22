@@ -1,0 +1,18 @@
+{
+  "type": "record",
+  "name": "EventEnvelopeV1",
+  "namespace": "cm.nkulkap.events.common.v1",
+  "doc": "Enveloppe de tout événement NKULKAP publié sur Kafka, calquée sur MessageV1 de Fineract : la charge utile est sérialisée en Avro dans data, selon le schéma nommé par dataschema.",
+  "fields": [
+    {"name": "id", "doc": "Identifiant unique de l'événement (UUIDv7).", "type": "string"},
+    {"name": "source", "doc": "Service émetteur : nkulkap-sync, nkulkap-pay, nkulkap-common…", "type": "string"},
+    {"name": "type", "doc": "Type d'événement : op.posted, op.rejected, payment.<état>, tournee.<état>.", "type": "string"},
+    {"name": "occurredAt", "doc": "Instant de l'événement, UTC, format ISO 8601 (ex. 2026-10-21T08:12:45.123Z).", "type": "string"},
+    {"name": "businessDate", "doc": "Date métier, format AAAA-MM-JJ.", "type": "string"},
+    {"name": "tenantId", "doc": "Locataire (ADR-012).", "type": "string"},
+    {"name": "idempotencyKey", "doc": "Clé de déduplication côté consommateur (livraison au moins une fois) ; égale à id.", "type": "string"},
+    {"name": "traceparent", "doc": "Contexte de trace W3C de la requête d'origine.", "type": ["null", "string"], "default": null},
+    {"name": "dataschema", "doc": "Nom complet du schéma de la charge utile, ex. cm.nkulkap.events.op.v1.OpPostedV1.", "type": "string"},
+    {"name": "data", "doc": "Charge utile sérialisée en Avro binaire.", "type": "bytes"}
+  ]
+}
