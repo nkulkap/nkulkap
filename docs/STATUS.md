@@ -51,7 +51,7 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 ### Reste à faire avant la Phase 1
 
 - Fusionner `phase-0/fineract` dans `main`.
-- Accord en attente pour faire pointer `CLAUDE.md` vers les fiches de `docs/specs/sections/`.
+- `CLAUDE.md` pointe vers les fiches de phase de `docs/specs/sections/` (accord de l'utilisateur du 2026-10-22).
 - GNU Make toujours absent du poste Windows : `make help` vérifié par sa commande seule ; `make bootstrap` et `make build` vérifiés sous Linux par la CI.
 
 ## Écarts

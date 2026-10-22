@@ -2,10 +2,10 @@
 
 ## À lire en début de session
 1. docs/STATUS.md (où en est-on)
-2. L'étape en cours dans docs/specs/NKULKAP_cahier_des_charges_et_plan.md, section 11
-3. Les ADR cités par cette étape
+2. La fiche de la phase en cours : docs/specs/sections/11-phase-NN-*.md (index : docs/specs/README.md)
+3. Les ADR cités par cette étape (docs/adr/README.md) et les seules fiches de docs/specs/sections/ qu'elle cite
 
-Ne relis pas le cahier des charges en entier : seulement l'étape en cours et les sections qu'elle cite.
+Ne lis jamais le cahier complet (docs/specs/NKULKAP_cahier_des_charges_et_plan.md) : il sert de référence pour régénérer les fiches (scripts/split-spec.sh).
 
 ## Règles d'or
 - Fineract = seule vérité comptable. Les satellites postent via API avec Idempotency-Key.
