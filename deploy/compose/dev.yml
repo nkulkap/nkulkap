@@ -56,7 +56,9 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.8.1
     restart: unless-stopped
-    command: start-dev
+    command: start-dev --import-realm
+    volumes:
+      - ../keycloak/realm-nkulkap.json:/opt/keycloak/data/import/realm-nkulkap.json:ro
     environment:
       KC_HEALTH_ENABLED: "true"
       # Compte administrateur FICTIF, développement local uniquement.

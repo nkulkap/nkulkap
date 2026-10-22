@@ -1,0 +1,10 @@
+# Surcouche de deploy/compose/dev.yml : Fineract en serveur de ressources Keycloak (ADR-018).
+# Usage : make up AUTH=oidc   (après make identity-provision en mode Basic).
+services:
+  fineract:
+    env_file:
+      - env/fineract.env
+      - env/fineract-oidc.env
+    depends_on:
+      keycloak:
+        condition: service_healthy

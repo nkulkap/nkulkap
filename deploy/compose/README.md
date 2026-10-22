@@ -20,6 +20,16 @@ Profil `obs` (non limité en mémoire) : prometheus (9090), grafana (3000, admin
 - Avec observabilité : `docker compose -f deploy/compose/dev.yml --profile obs up -d`
 - Image Fineract différente : `FINERACT_IMAGE=mon-image:tag make up`
 
+## Identité (Keycloak)
+
+Le royaume `nkulkap` est importé au démarrage de Keycloak depuis `deploy/keycloak/realm-nkulkap.json` (`--import-realm`).
+
+- Provisionnement (pile démarrée en `AUTH=basic`) : `make identity-provision` crée le royaume, ainsi que les rôles et utilisateurs Fineract.
+- Export : `make identity-export` arrête Keycloak, exporte le royaume vers `deploy/keycloak/realm-nkulkap.json` puis redémarre Keycloak.
+- Mode OIDC : `make up AUTH=oidc` ajoute `deploy/compose/oidc.yml` ; Fineract devient serveur de ressources Keycloak (ADR-018). `make identity-test` vérifie alors l'authentification et les autorisations.
+- Les utilisateurs FICTIFS sont décrits dans `deploy/keycloak/fictif-users.json` (développement local uniquement).
+- Le client `nkulkap-tests` est réservé au développement et aux tests : ne jamais le reprendre en production.
+
 ## Test de l'étape 0.4
 
 ```

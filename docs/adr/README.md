@@ -21,3 +21,4 @@ Chaque ADR décrit un contexte, une décision et ses conséquences ; un nouvel A
 | ADR-015 | [Conventions Gradle propres aux modules NKULKAP : formatage et en-tête de licence](0015-conventions-gradle-modules-nkulkap.md) | Accepté |
 | ADR-016 | [Double garde contre les doublons : `Idempotency-Key` et `externalId` égaux à `op_id`](0016-double-garde-idempotency-key-et-externalid.md) | Accepté |
 | ADR-017 | [Écritures comptables : pas d'événement externe Fineract, lecture par l'API](0017-ecritures-comptables-sans-evenement-externe.md) | Accepté |
+| ADR-018 | [Identité : Keycloak authentifie, Fineract autorise ; mode OIDC distinct du mode Basic de développement](0018-identite-keycloak-roles-fineract.md) | Proposé |
