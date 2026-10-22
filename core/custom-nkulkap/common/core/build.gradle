@@ -1,0 +1,9 @@
+description = 'NKULKAP Fineract Common Core'
+
+group = 'cm.nkulkap.fineract'
+
+base {
+    archivesName = 'nkulkap-fineract-common-core'
+}
+
+apply from: 'dependencies.gradle'

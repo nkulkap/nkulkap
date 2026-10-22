@@ -9,8 +9,12 @@ FINERACT_DIR   := core/fineract
 CUSTOM_SRC     := core/custom-nkulkap
 CUSTOM_LINK    := $(FINERACT_DIR)/custom/nkulkap
 COMPOSE        := docker compose -f deploy/compose/dev.yml
-# link : lien symbolique (défaut) ; copy : copie synchronisée (repli Windows, voir étape 0.2)
+# link : lien symbolique ; junction : jonction NTFS (Windows) ; copy : copie (dernier recours). Voir ADR-013.
+ifneq (,$(findstring MINGW,$(shell uname -s))$(findstring MSYS,$(shell uname -s)))
+LINK_MODE      ?= junction
+else
 LINK_MODE      ?= link
+endif
 COMPONENT      ?=
 SCENARIO       ?=
 SIZE           ?= small
@@ -25,8 +29,12 @@ bootstrap: ## Initialise les sous-modules et relie les modules custom à Finerac
 	@if [ ! -d "$(FINERACT_DIR)/custom" ]; then echo "Sous-module $(FINERACT_DIR) absent : voir docs/STATUS.md, étape 0.2." >&2; exit 1; fi
 	@if [ "$(LINK_MODE)" = "copy" ]; then \
 		rm -rf "$(CUSTOM_LINK)" && mkdir -p "$(CUSTOM_LINK)" && cp -R "$(CUSTOM_SRC)/." "$(CUSTOM_LINK)/" && echo "Copie synchronisée : $(CUSTOM_LINK)"; \
-	elif [ -L "$(CUSTOM_LINK)" ]; then echo "Lien déjà présent : $(CUSTOM_LINK)"; \
-	else MSYS=winsymlinks:nativestrict ln -s ../../custom-nkulkap "$(CUSTOM_LINK)" && echo "Lien créé : $(CUSTOM_LINK) -> ../../custom-nkulkap"; fi
+	elif [ -e "$(CUSTOM_LINK)" ]; then echo "Lien déjà présent : $(CUSTOM_LINK)"; \
+	elif [ "$(LINK_MODE)" = "junction" ]; then \
+		cmd //c "mklink /J $$(cygpath -w "$(CUSTOM_LINK)") $$(cygpath -w "$(CUSTOM_SRC)")" >/dev/null && echo "Jonction créée : $(CUSTOM_LINK) -> $(CUSTOM_SRC)"; \
+	else ln -s ../../custom-nkulkap "$(CUSTOM_LINK)" && echo "Lien créé : $(CUSTOM_LINK) -> ../../custom-nkulkap"; fi
+	@EXCL="$$(git -C $(FINERACT_DIR) rev-parse --path-format=absolute --git-path info/exclude)"; \
+		grep -qx '/custom/nkulkap' "$$EXCL" 2>/dev/null || echo '/custom/nkulkap' >> "$$EXCL"
 
 build: ## Compile les modules Fineract NKULKAP
 	cd $(FINERACT_DIR) && ./gradlew $$(./gradlew -q projects | grep -o ':custom:nkulkap:[a-z:-]*' | sed 's/$$/:build/' | tr '\n' ' ')

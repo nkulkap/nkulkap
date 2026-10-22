@@ -8,7 +8,7 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 
 | Phase | Contenu | Statut | Modèle conseillé |
 |---|---|---|---|
-| 0 | Préparer : dépôts, outillage, pile de développement | En cours (0.1 et 0.3 faites, 0.2, 0.4 et 0.5 bloquées) | Sonnet pour squelette, ADR, Compose, CI ; Opus pour Makefile, choix du fork, relecture |
+| 0 | Préparer : dépôts, outillage, pile de développement | En cours (0.1 et 0.3 faites, 0.2 en partie, 0.4 et 0.5 bloquées) | Sonnet pour squelette, ADR, Compose, CI ; Opus pour Makefile, choix du fork, relecture |
 | 1 | Comprendre : explorations et vérifications d'hypothèses | À faire | Opus pilote et conclut ; Haiku (`fineract-explorer`) pour les recherches |
 | 2 | Socle commun : contrats, données de test, réseau dégradé, identité | À faire | Opus pour contrats et identité (sécurité) ; Sonnet pour fixtures FICTIVES, profils Toxiproxy, Keycloak en suivant le modèle |
 | 3 | L1 Plan comptable et hors-bilan | À faire | Opus pour les règles comptables et le hors-bilan ; Sonnet pour CRUD, ressources REST, migrations |
@@ -28,17 +28,20 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 | Étape | Statut | Vérification |
 |---|---|---|
 | 0.1 Monodépôt | Fait | Arborescence de la section 6 présente ; `CLAUDE.md` et `docs/STATUS.md` présents ; premier commit fait. `make help` non exécutable (GNU Make absent du poste) : la commande de la cible `help` a été lancée à la main et liste les 10 cibles. |
-| 0.2 Fork Fineract et modules custom | Bloquée | Décisions humaines requises, voir plus bas. |
-| 0.3 ADR | Fait | 12 fichiers dans `docs/adr/`, tous liés depuis `docs/adr/README.md`. |
-| 0.4 Pile de développement | Bloquée | Dépend de 0.2 (image `fineract-custom`) ; démon Docker injoignable sur le poste. |
-| 0.5 Intégration continue | Bloquée | Exige un dépôt distant GitHub pour vérifier le déclenchement par chemin. |
+| 0.2 Fork Fineract et modules custom | En partie | Fait : fork public `nkulkap/nkulkap-fineract` (branche par défaut `nkulkap/main` = `b94b2ddf`), sous-module `core/fineract`, module `core/custom-nkulkap/common/core` (`build.gradle` calqué sur `custom/acme/note/service`), jonction `core/fineract/custom/nkulkap` (ADR-013), `settings.gradle` non modifié. Reste : `./gradlew projects` et `./gradlew :custom:nkulkap:common:core:build`, impossibles sans JDK 25. |
+| 0.3 ADR | Fait | 13 fichiers dans `docs/adr/` (001 à 012 du cahier, 013 pour la jonction Windows), tous liés depuis `docs/adr/README.md`. |
+| 0.4 Pile de développement | Bloquée | Dépend de la compilation de 0.2 (image `fineract-custom`) ; démon Docker injoignable sur le poste. |
+| 0.5 Intégration continue | À faire | Dépôts distants créés ; reste à écrire les workflows et les vérifier sur GitHub. |
 
-### Bloquants (décision ou action humaine)
+### Bloquants (action humaine)
 
-1. **Fork `nkulkap-fineract`** : compte ou organisation GitHub où le créer. L'amont a publié l'étiquette `1.16.0`, postérieure à la `1.15.0` citée par le cahier : choisir la base entre le commit `b94b2ddf` et `1.16.0`.
-2. **Dépôt distant du monodépôt** `nkulkap` (nécessaire à 0.5).
-3. **Outillage du poste** : installer GNU Make et un JDK 21 (seul Java 11 est présent) ; démarrer Docker Desktop.
-4. **Lien symbolique sous Windows** : activer le mode développeur, ou utiliser `make bootstrap LINK_MODE=copy` et consigner ce choix dans un ADR comme le prévoit l'étape 0.2.
+1. **Outillage du poste** : installer GNU Make et un JDK 25 (Fineract `develop` impose la toolchain Java 25 et Gradle 9.7.1 ; seul Java 11 est présent) ; démarrer Docker Desktop.
+
+### Dépôts
+
+- Monodépôt : https://github.com/nkulkap/nkulkap (public).
+- Fork : https://github.com/nkulkap/nkulkap-fineract (public, fork d'`apache/fineract`). Base `b94b2ddf` plutôt que l'étiquette `1.16.0`, car celle-ci (19/10/2026) est antérieure au commit de référence (20/10/2026), conformément à la règle de l'étape 0.2.
+- Sous Git pour Windows, cloner Fineract avec `-c http.version=HTTP/1.1 -c core.longpaths=true` : en HTTP/2, le clone échoue (`curl 92`, `early EOF`).
 
 ## Écarts
 
@@ -46,6 +49,9 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 - Dans la copie, la phrase sur la recherche web d'antériorité précise désormais qu'elle portait sur « Nkulap ». Elle est marquée **[À VÉRIFIER]** : refaire la recherche pour « Nkulkap ».
 - Le cahier est découpé en 44 fiches dans `docs/specs/sections/`, générées par `scripts/split-spec.sh`. La copie complète reste la référence.
 - `apps/` n'existe pas encore : ses deux dossiers seront des sous-modules (forks openMF).
+- Liaison des modules custom sous Windows par jonction NTFS plutôt que par lien symbolique ou copie (ADR-013).
+- Groupe Gradle `cm.nkulkap.fineract` choisi par analogie avec `com.acme.fineract` : le cahier ne fixe pas de nom de paquet.
+- Les dépôts sont publics et le monodépôt n'a pas encore de fichier `LICENSE` : sans licence, le code reste « tous droits réservés ». Licence à choisir (voir section 9.3 du cahier).
 
 ## Fichiers FICTIFS utilisés
 

@@ -16,3 +16,4 @@ Chaque ADR décrit un contexte, une décision et ses conséquences ; un nouvel A
 | ADR-010 | [Keycloak (OIDC) pour l'identité](0010-keycloak-oidc-identite.md) | Accepté |
 | ADR-011 | [Hébergement au Cameroun par défaut](0011-hebergement-cameroun-par-defaut.md) | Accepté |
 | ADR-012 | [Modèle de multi-location](0012-modele-multi-location.md) | Accepté |
+| ADR-013 | [Jonction NTFS pour relier les modules custom sous Windows](0013-jonction-ntfs-modules-custom-windows.md) | Accepté |

@@ -22,7 +22,7 @@ NKULKAP est un core banking pour les EMF et les banques du Cameroun, construit s
 
 ## Démarrer
 
-Prérequis : Git, GNU Make, JDK 21, Docker.
+Prérequis : Git, GNU Make, JDK 25 (exigé par Fineract `develop`), Docker.
 
 ```sh
 make help       # liste des cibles

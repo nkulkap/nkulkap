@@ -1,0 +1,4 @@
+dependencies {
+    implementation(project(':fineract-core'))
+    compileOnly('org.springframework.boot:spring-boot-autoconfigure')
+}
