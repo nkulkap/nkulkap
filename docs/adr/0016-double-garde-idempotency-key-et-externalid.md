@@ -1,6 +1,6 @@
 # ADR-016 — Double garde contre les doublons : `Idempotency-Key` et `externalId` égaux à `op_id`
 
-- Statut : Proposé
+- Statut : Accepté (validé par l'utilisateur le 2026-10-22)
 - Date : 2026-10-22
 - Source : étape 1.2, [idempotence-fineract.md](../specs/idempotence-fineract.md)
 

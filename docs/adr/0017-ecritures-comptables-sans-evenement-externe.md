@@ -1,6 +1,6 @@
 # ADR-017 — Écritures comptables : pas d'événement externe Fineract, lecture par l'API
 
-- Statut : Proposé
+- Statut : Accepté (validé par l'utilisateur le 2026-10-22)
 - Date : 2026-10-22
 - Source : étape 1.3, [fineract-events.md](../specs/fineract-events.md)
 
