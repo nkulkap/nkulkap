@@ -1,0 +1,48 @@
+{
+  "_comment": "DONNÉES FICTIVES. Aucun nom, numéro ou montant ne correspond à une personne ou un établissement réel. Montants en XAF entiers.",
+  "openingDate": "2026-01-02",
+  "offices": [
+    {"externalId": "SEED-AG-DLA", "name": "FICTIF Agence Douala Akwa"},
+    {"externalId": "SEED-AG-YDE", "name": "FICTIF Agence Yaoundé Mvog-Mbi"}
+  ],
+  "staff": [
+    {"externalId": "SEED-EMP-01", "office": "SEED-AG-DLA", "firstname": "Ngono", "lastname": "FICTIF-Ateba", "isLoanOfficer": true},
+    {"externalId": "SEED-EMP-02", "office": "SEED-AG-DLA", "firstname": "Tchoupo", "lastname": "FICTIF-Kamga", "isLoanOfficer": false},
+    {"externalId": "SEED-EMP-03", "office": "SEED-AG-YDE", "firstname": "Mbarga", "lastname": "FICTIF-Essomba", "isLoanOfficer": true}
+  ],
+  "glAccounts": [
+    {"key": "cash", "glCode": "FICTIF-5711", "name": "FICTIF Caisse agence", "type": 1},
+    {"key": "loanPortfolio", "glCode": "FICTIF-2021", "name": "FICTIF Crédits ordinaires à la clientèle", "type": 1},
+    {"key": "overdraftPortfolio", "glCode": "FICTIF-2031", "name": "FICTIF Découverts à la clientèle", "type": 1},
+    {"key": "loanTransfersSuspense", "glCode": "FICTIF-4711", "name": "FICTIF Virements de prêts en attente", "type": 1},
+    {"key": "savingsControl", "glCode": "FICTIF-3711", "name": "FICTIF Dépôts à vue de la clientèle", "type": 2},
+    {"key": "savingsTransfersSuspense", "glCode": "FICTIF-4721", "name": "FICTIF Virements d'épargne en attente", "type": 2},
+    {"key": "overpayment", "glCode": "FICTIF-3721", "name": "FICTIF Trop-perçus sur prêts", "type": 2},
+    {"key": "equity", "glCode": "FICTIF-1011", "name": "FICTIF Capital social", "type": 3},
+    {"key": "interestIncome", "glCode": "FICTIF-7021", "name": "FICTIF Intérêts sur crédits", "type": 4},
+    {"key": "feeIncome", "glCode": "FICTIF-7061", "name": "FICTIF Commissions", "type": 4},
+    {"key": "penaltyIncome", "glCode": "FICTIF-7071", "name": "FICTIF Pénalités de retard", "type": 4},
+    {"key": "recoveryIncome", "glCode": "FICTIF-7581", "name": "FICTIF Récupérations sur créances amorties", "type": 4},
+    {"key": "savingsInterestExpense", "glCode": "FICTIF-6011", "name": "FICTIF Intérêts sur dépôts", "type": 5},
+    {"key": "writeOff", "glCode": "FICTIF-6511", "name": "FICTIF Pertes sur créances irrécouvrables", "type": 5}
+  ],
+  "savingsProduct": {"name": "FICTIF Épargne à vue", "shortName": "FEV"},
+  "loanProduct": {
+    "name": "FICTIF Crédit ordinaire", "shortName": "FCO",
+    "principal": 500000, "minPrincipal": 50000, "maxPrincipal": 5000000,
+    "numberOfRepayments": 6, "interestRatePerPeriod": 2
+  },
+  "clients": [
+    {"externalId": "SEED-CLI-01", "office": "SEED-AG-DLA", "firstname": "Abena", "lastname": "FICTIF-Manga", "deposit": 150000},
+    {"externalId": "SEED-CLI-02", "office": "SEED-AG-DLA", "firstname": "Biyong", "lastname": "FICTIF-Nkolo", "deposit": 75000},
+    {"externalId": "SEED-CLI-03", "office": "SEED-AG-DLA", "firstname": "Djomo", "lastname": "FICTIF-Fotso", "deposit": 220000},
+    {"externalId": "SEED-CLI-04", "office": "SEED-AG-DLA", "firstname": "Ekane", "lastname": "FICTIF-Moukoko", "deposit": 50000},
+    {"externalId": "SEED-CLI-05", "office": "SEED-AG-DLA", "firstname": "Fouda", "lastname": "FICTIF-Owona", "deposit": 310000},
+    {"externalId": "SEED-CLI-06", "office": "SEED-AG-YDE", "firstname": "Kemayou", "lastname": "FICTIF-Tagne", "deposit": 95000},
+    {"externalId": "SEED-CLI-07", "office": "SEED-AG-YDE", "firstname": "Mvondo", "lastname": "FICTIF-Abega", "deposit": 180000},
+    {"externalId": "SEED-CLI-08", "office": "SEED-AG-YDE", "firstname": "Nana", "lastname": "FICTIF-Djoumessi", "deposit": 40000},
+    {"externalId": "SEED-CLI-09", "office": "SEED-AG-YDE", "firstname": "Onana", "lastname": "FICTIF-Bella", "deposit": 125000},
+    {"externalId": "SEED-CLI-10", "office": "SEED-AG-YDE", "firstname": "Tsala", "lastname": "FICTIF-Ndzana", "deposit": 260000}
+  ],
+  "loan": {"externalId": "SEED-PRT-01", "client": "SEED-CLI-03", "principal": 500000}
+}

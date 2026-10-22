@@ -9,7 +9,7 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 | Phase | Contenu | Statut | Modèle conseillé |
 |---|---|---|---|
 | 0 | Préparer : dépôts, outillage, pile de développement | Terminée et fusionnée le 2026-10-22 | Sonnet pour squelette, ADR, Compose, CI ; Opus pour Makefile, choix du fork, relecture |
-| 1 | Comprendre : explorations et vérifications d'hypothèses | Prochaine | Opus pilote et conclut ; Haiku (`fineract-explorer`) pour les recherches |
+| 1 | Comprendre : explorations et vérifications d'hypothèses | En cours | Opus pilote et conclut ; Haiku (`fineract-explorer`) pour les recherches |
 | 2 | Socle commun : contrats, données de test, réseau dégradé, identité | À faire | Opus pour contrats et identité (sécurité) ; Sonnet pour fixtures FICTIVES, profils Toxiproxy, Keycloak en suivant le modèle |
 | 3 | L1 Plan comptable et hors-bilan | À faire | Opus pour les règles comptables et le hors-bilan ; Sonnet pour CRUD, ressources REST, migrations |
 | 4 | L2 TEG et usure | À faire | Opus pour le calcul du TEG et son premier test ; Sonnet (`nkulkap-tests`) pour les cas supplémentaires, `nkulkap-i18n` pour la fiche TEG |
@@ -54,6 +54,14 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 - `e2e-nightly` actif sur `main` (planifié chaque nuit à 01:00 UTC) ; déclenchement manuel réussi ([exécution 39786846059](https://github.com/nkulkap/nkulkap/actions/runs/39786846059)).
 - `CLAUDE.md` fait lire la fiche de la phase en cours plutôt que le cahier complet (accord de l'utilisateur du 2026-10-22).
 
+## Phase 1 — détail
+
+| Étape | Statut | Vérification |
+|---|---|---|
+| 1.1 Tour de Fineract | Fait (2026-10-22) | `make seed` (`testing/fixtures/seed/seed.py`, Python sans dépendance) crée par API, avec des données FICTIVES : devise XAF, 2 agences, 3 employés, 14 comptes comptables, 1 produit d'épargne et 1 produit de prêt en comptabilité de caisse, 10 clients, 10 comptes d'épargne avec dépôt, 1 prêt décaissé. Rejouable : vérifié sur base vierge (`make down && make up`, puis `make seed` deux fois) ; `make seed-test` (seed deux fois, état identique) : OK. Note [fineract-api-usage.md](specs/fineract-api-usage.md) : `glaccounts`, `journalentries`, `savingsaccounts/{id}/transactions` (`deposit`, `withdrawal`, `force-withdrawal`), `loans/{id}/transactions` (`repayment`), `runreports`, `externalevents/configuration`, avec réponses et erreurs observées. |
+
+Constats de 1.1 utiles à la suite : XAF doit être déclarée dans `/currencies` sinon les écritures manuelles sont refusées ; `GET /journalentries` ne filtre pas par `referenceNumber` ; `PUT /externalevents/configuration` avec un type inconnu renvoie 500.
+
 ## Écarts
 
 - Projet renommé NKULAP → NKULKAP. Le cahier a été copié dans `docs/specs/` avec le renommage appliqué ; l'original reste dans Téléchargements.
@@ -63,8 +71,9 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 - Liaison des modules custom sous Windows par jonction NTFS plutôt que par lien symbolique ou copie (ADR-013).
 - Groupe Gradle `cm.nkulkap.fineract` choisi par analogie avec `com.acme.fineract` : le cahier ne fixe pas de nom de paquet.
 - Modules NKULKAP : conventions Gradle propres (`core/custom-nkulkap/nkulkap-conventions.gradle`, ADR-015) — palantir-java-format, en-tête propriétaire Circaura Sarl, sans audit Apache RAT ni en-tête Apache.
+- Seed de l'étape 1.1 écrit en Python (bibliothèque standard seule) : le cahier ne fixe pas de langage pour `testing/fixtures/seed`. `make seed` est avancé de la phase 2 à l'étape 1.1 ; `make fixtures` reste pour la phase 2.
 - Licence : propriétaire, © Circaura Sarl (`LICENSE`) ; composants tiers dans `NOTICE`. Les deux dépôts restent publics.
 
 ## Fichiers FICTIFS utilisés
 
-Aucun.
+- `testing/fixtures/seed/seed-data.json` (étape 1.1) : agences, employés, clients et montants FICTIFS ; comptes comptables `FICTIF-xxxx` en attendant le plan comptable des EMF (phase 3).
