@@ -1,0 +1,3 @@
+// Copyright (c) 2026 Circaura Sarl. Tous droits réservés.
+// Tests d'exploration (Phase 1) contre la pile locale, sans compiler Fineract.
+rootProject.name = 'nkulkap-spikes'

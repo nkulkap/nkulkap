@@ -1,0 +1,44 @@
+// Copyright (c) 2026 Circaura Sarl. Tous droits réservés.
+plugins {
+    id 'java'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:6.0.3')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.22.3'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 25
+    options.encoding = 'UTF-8'
+}
+
+// Ces tests visent la pile démarrée (make up && make seed) : jamais lancés par `build` ni par la CI.
+test {
+    enabled = false
+}
+
+tasks.register('spikeTest', Test) {
+    description = 'Tests d\'exploration de la Phase 1 contre la pile locale'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform()
+    maxHeapSize = '256m'
+    // Certificat autosigné de la pile locale (CN différent de localhost).
+    systemProperty 'jdk.internal.httpclient.disableHostnameVerification', 'true'
+    // Relancer à chaque fois : le résultat dépend de la pile, pas des sources.
+    outputs.upToDateWhen { false }
+    systemProperties System.getProperties().findAll { it.key.toString().startsWith('nkulkap.') }
+    testLogging {
+        events 'passed', 'failed', 'skipped', 'standard_out'
+        exceptionFormat 'full'
+        showStandardStreams = true
+    }
+}
