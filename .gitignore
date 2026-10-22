@@ -29,3 +29,6 @@ Thumbs.db
 .env
 *.log
 deploy/compose/.env
+
+# Python
+__pycache__/
