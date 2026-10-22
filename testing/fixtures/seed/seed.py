@@ -49,6 +49,7 @@ class Seeder:
 
     def run(self) -> None:
         self.seed_currency()
+        self.seed_external_events()
         self.seed_offices()
         self.seed_staff()
         self.seed_gl_accounts()
@@ -67,6 +68,18 @@ class Seeder:
         if "XAF" not in codes:
             self.api.put("/currencies", {"currencies": codes + ["XAF"]})
             log("Devise de l'organisation ajoutée : XAF")
+
+    def seed_external_events(self) -> None:
+        # Étape 1.3 : événements externes lus par NKULKAP (liste identique à ExternalEventsSpikeIT.NKULKAP_EVENTS).
+        current = {e["type"]: e["enabled"] for e in self.api.get("/externalevents/configuration")["externalEventConfiguration"]}
+        wanted = {t: True for t in DATA["externalEvents"] if not current.get(t)}
+        unknown = [t for t in DATA["externalEvents"] if t not in current]
+        if unknown:
+            # Un type inconnu ferait répondre 500 au PUT : échouer avec un message clair.
+            raise FineractError("PUT", "/externalevents/configuration", 0, f"types d'événements inconnus : {unknown}")
+        if wanted:
+            self.api.put("/externalevents/configuration", {"externalEventConfigurations": wanted})
+            log(f"Événements externes activés : {', '.join(wanted)}")
 
     def seed_offices(self) -> None:
         existing = {o.get("externalId"): o["id"] for o in self.api.get("/offices")}
