@@ -8,7 +8,7 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 
 | Phase | Contenu | Statut | Modèle conseillé |
 |---|---|---|---|
-| 0 | Préparer : dépôts, outillage, pile de développement | En cours (0.1, 0.2 et 0.3 faites ; 0.4 et 0.5 à faire) | Sonnet pour squelette, ADR, Compose, CI ; Opus pour Makefile, choix du fork, relecture |
+| 0 | Préparer : dépôts, outillage, pile de développement | En cours (0.1 à 0.4 faites ; 0.5 à faire) | Sonnet pour squelette, ADR, Compose, CI ; Opus pour Makefile, choix du fork, relecture |
 | 1 | Comprendre : explorations et vérifications d'hypothèses | À faire | Opus pilote et conclut ; Haiku (`fineract-explorer`) pour les recherches |
 | 2 | Socle commun : contrats, données de test, réseau dégradé, identité | À faire | Opus pour contrats et identité (sécurité) ; Sonnet pour fixtures FICTIVES, profils Toxiproxy, Keycloak en suivant le modèle |
 | 3 | L1 Plan comptable et hors-bilan | À faire | Opus pour les règles comptables et le hors-bilan ; Sonnet pour CRUD, ressources REST, migrations |
@@ -30,7 +30,7 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 | 0.1 Monodépôt | Fait | Arborescence de la section 6 présente ; `CLAUDE.md` et `docs/STATUS.md` présents ; premier commit fait. `make help` non exécutable (GNU Make absent du poste) : la commande de la cible `help` a été lancée à la main et liste les 10 cibles. |
 | 0.2 Fork Fineract et modules custom | Fait (2026-10-22) | Fork public `nkulkap/nkulkap-fineract` (branche par défaut `nkulkap/main` = `b94b2ddf`), sous-module `core/fineract`, module `core/custom-nkulkap/common/core` (calqué sur `custom/acme/note/service`), jonction `core/fineract/custom/nkulkap` (ADR-013). `./gradlew projects` liste `:custom:nkulkap:common:core` ; `settings.gradle` identique à `b94b2ddf` ; `./gradlew :custom:nkulkap:common:core:build -x spotlessGroovyGradle -x spotlessCheck` : BUILD SUCCESSFUL. Réserve : `spotless` non vérifié, `download.eclipse.org` étant en arrêt temporaire le 2026-10-22 ; à relancer sans `-x`. |
 | 0.3 ADR | Fait | 13 fichiers dans `docs/adr/` (001 à 012 du cahier, 013 pour la jonction Windows), tous liés depuis `docs/adr/README.md`. |
-| 0.4 Pile de développement | Bloquée | Dépend de la compilation de 0.2 (image `fineract-custom`) ; démon Docker injoignable sur le poste. |
+| 0.4 Pile de développement | Fait (2026-10-22) | `deploy/compose/dev.yml` : PostgreSQL 18.3, Kafka 4.3.2 (KRaft), Keycloak 26.8.1, Fineract (`fineract-custom`, construite par `./gradlew :custom:docker:jibDockerBuild`), Toxiproxy 2.13.0 ; Prometheus, Grafana et Loki sous le profil `obs`. Contrôles de santé sur chaque service ; fuseau du locataire `Africa/Douala` vérifié en base. Démarrage (images présentes, base vide) jusqu'à `GET /offices` = 200 : 238 s sur un poste de 7,4 Go ; ≈ 2,1 Go consommés. `make down` : 0 conteneur, volume ou réseau restant. Réserve : profil `obs` non démarré (mémoire du poste) ; `wget` dans l'image Loki non vérifié. |
 | 0.5 Intégration continue | À faire | Dépôts distants créés ; reste à écrire les workflows et les vérifier sur GitHub. |
 
 ### Poste de développement (Windows, 7,4 Go de RAM)
@@ -40,6 +40,7 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 - `~/.gradle/gradle.properties` ramène Gradle à `-Xmx3g`, 2 workers, sans parallélisme : le `-Xmx12g` de Fineract fait planter la JVM sur ce poste.
 - Le sous-module Fineract doit être extrait en LF (`core.autocrlf=false`) : en CRLF, le build réécrit les sources et échoue. `make bootstrap` le règle.
 - Ne pas compiler Fineract pendant que la pile Docker tourne (mémoire insuffisante pour les deux).
+- Windows Defender : dossiers du projet et `~/.gradle` exclus de l'analyse en temps réel. Sans cela, la compilation de Fineract échoue par « Ressources système insuffisantes » (erreur 1450). La construction de l'image prend environ 11 min avec `-Dorg.gradle.workers.max=1` et `-Xmx2560m`.
 
 ### Dépôts
 
