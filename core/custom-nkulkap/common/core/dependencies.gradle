@@ -1,4 +1,18 @@
 dependencies {
     implementation(project(':fineract-core'))
-    compileOnly('org.springframework.boot:spring-boot-autoconfigure')
+    implementation(project(':fineract-loan'))
+    implementation(
+            'jakarta.annotation:jakarta.annotation-api',
+            'jakarta.ws.rs:jakarta.ws.rs-api',
+            'org.springframework:spring-context',
+            'org.springframework:spring-jdbc',
+            'org.springframework.boot:spring-boot-autoconfigure',
+            )
+    // Loan est une entité JPA (Spring Data, tissée par EclipseLink) : ses supertypes doivent être visibles à la compilation.
+    implementation('org.springframework.boot:spring-boot-starter-data-jpa') {
+        exclude group: 'org.hibernate'
+    }
+    implementation('org.eclipse.persistence:org.eclipse.persistence.jpa') {
+        exclude group: 'org.eclipse.persistence', module: 'jakarta.persistence'
+    }
 }
