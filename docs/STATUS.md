@@ -1,6 +1,6 @@
 # NKULKAP — Avancement
 
-Dernière mise à jour : 2026-10-21. Plan détaillé : [section 11 du cahier](specs/NKULKAP_cahier_des_charges_et_plan.md), une fiche par phase dans [specs/sections/](specs/README.md).
+Dernière mise à jour : 2026-10-22. Plan détaillé : [section 11 du cahier](specs/NKULKAP_cahier_des_charges_et_plan.md), une fiche par phase dans [specs/sections/](specs/README.md).
 
 ## Phases
 
@@ -8,7 +8,7 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 
 | Phase | Contenu | Statut | Modèle conseillé |
 |---|---|---|---|
-| 0 | Préparer : dépôts, outillage, pile de développement | En cours (0.1 et 0.3 faites, 0.2 en partie, 0.4 et 0.5 bloquées) | Sonnet pour squelette, ADR, Compose, CI ; Opus pour Makefile, choix du fork, relecture |
+| 0 | Préparer : dépôts, outillage, pile de développement | En cours (0.1, 0.2 et 0.3 faites ; 0.4 et 0.5 à faire) | Sonnet pour squelette, ADR, Compose, CI ; Opus pour Makefile, choix du fork, relecture |
 | 1 | Comprendre : explorations et vérifications d'hypothèses | À faire | Opus pilote et conclut ; Haiku (`fineract-explorer`) pour les recherches |
 | 2 | Socle commun : contrats, données de test, réseau dégradé, identité | À faire | Opus pour contrats et identité (sécurité) ; Sonnet pour fixtures FICTIVES, profils Toxiproxy, Keycloak en suivant le modèle |
 | 3 | L1 Plan comptable et hors-bilan | À faire | Opus pour les règles comptables et le hors-bilan ; Sonnet pour CRUD, ressources REST, migrations |
@@ -28,14 +28,18 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 | Étape | Statut | Vérification |
 |---|---|---|
 | 0.1 Monodépôt | Fait | Arborescence de la section 6 présente ; `CLAUDE.md` et `docs/STATUS.md` présents ; premier commit fait. `make help` non exécutable (GNU Make absent du poste) : la commande de la cible `help` a été lancée à la main et liste les 10 cibles. |
-| 0.2 Fork Fineract et modules custom | En partie | Fait : fork public `nkulkap/nkulkap-fineract` (branche par défaut `nkulkap/main` = `b94b2ddf`), sous-module `core/fineract`, module `core/custom-nkulkap/common/core` (`build.gradle` calqué sur `custom/acme/note/service`), jonction `core/fineract/custom/nkulkap` (ADR-013), `settings.gradle` non modifié. Reste : `./gradlew projects` et `./gradlew :custom:nkulkap:common:core:build`, impossibles sans JDK 25. |
+| 0.2 Fork Fineract et modules custom | Fait (2026-10-22) | Fork public `nkulkap/nkulkap-fineract` (branche par défaut `nkulkap/main` = `b94b2ddf`), sous-module `core/fineract`, module `core/custom-nkulkap/common/core` (calqué sur `custom/acme/note/service`), jonction `core/fineract/custom/nkulkap` (ADR-013). `./gradlew projects` liste `:custom:nkulkap:common:core` ; `settings.gradle` identique à `b94b2ddf` ; `./gradlew :custom:nkulkap:common:core:build -x spotlessGroovyGradle -x spotlessCheck` : BUILD SUCCESSFUL. Réserve : `spotless` non vérifié, `download.eclipse.org` étant en arrêt temporaire le 2026-10-22 ; à relancer sans `-x`. |
 | 0.3 ADR | Fait | 13 fichiers dans `docs/adr/` (001 à 012 du cahier, 013 pour la jonction Windows), tous liés depuis `docs/adr/README.md`. |
 | 0.4 Pile de développement | Bloquée | Dépend de la compilation de 0.2 (image `fineract-custom`) ; démon Docker injoignable sur le poste. |
 | 0.5 Intégration continue | À faire | Dépôts distants créés ; reste à écrire les workflows et les vérifier sur GitHub. |
 
-### Bloquants (action humaine)
+### Poste de développement (Windows, 7,4 Go de RAM)
 
-1. **Outillage du poste** : installer GNU Make et un JDK 25 (Fineract `develop` impose la toolchain Java 25 et Gradle 9.7.1 ; seul Java 11 est présent) ; démarrer Docker Desktop.
+- JDK 25 (`Microsoft.OpenJDK.25`) installé ; GNU Make toujours absent.
+- Docker Desktop (WSL2) limité à 5 Go par `%USERPROFILE%\.wslconfig` (`memory=5GB`, `swap=8GB`).
+- `~/.gradle/gradle.properties` ramène Gradle à `-Xmx3g`, 2 workers, sans parallélisme : le `-Xmx12g` de Fineract fait planter la JVM sur ce poste.
+- Le sous-module Fineract doit être extrait en LF (`core.autocrlf=false`) : en CRLF, le build réécrit les sources et échoue. `make bootstrap` le règle.
+- Ne pas compiler Fineract pendant que la pile Docker tourne (mémoire insuffisante pour les deux).
 
 ### Dépôts
 
@@ -51,6 +55,7 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 - `apps/` n'existe pas encore : ses deux dossiers seront des sous-modules (forks openMF).
 - Liaison des modules custom sous Windows par jonction NTFS plutôt que par lien symbolique ou copie (ADR-013).
 - Groupe Gradle `cm.nkulkap.fineract` choisi par analogie avec `com.acme.fineract` : le cahier ne fixe pas de nom de paquet.
+- L'audit Apache RAT est désactivé dans les modules NKULKAP : il exige l'en-tête de licence de la fondation Apache, qui ne s'applique pas à notre code. À revoir quand la licence sera choisie.
 - Les dépôts sont publics et le monodépôt n'a pas encore de fichier `LICENSE` : sans licence, le code reste « tous droits réservés ». Licence à choisir (voir section 9.3 du cahier).
 
 ## Fichiers FICTIFS utilisés

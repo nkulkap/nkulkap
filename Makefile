@@ -25,8 +25,12 @@ help: ## Liste les cibles disponibles
 	@grep -E '^[a-z0-9-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
 
 bootstrap: ## Initialise les sous-modules et relie les modules custom à Fineract
-	git submodule update --init --recursive
+	git -c http.version=HTTP/1.1 -c core.longpaths=true submodule update --init --recursive
 	@if [ ! -d "$(FINERACT_DIR)/custom" ]; then echo "Sous-module $(FINERACT_DIR) absent : voir docs/STATUS.md, étape 0.2." >&2; exit 1; fi
+	@# Fineract attend des fins de ligne LF : sans ceci, Git pour Windows extrait en CRLF et le build réécrit les sources.
+	@if [ "$$(git -C $(FINERACT_DIR) config core.autocrlf)" != "false" ]; then \
+		git -C $(FINERACT_DIR) config core.autocrlf false && git -C $(FINERACT_DIR) config core.eol lf && git -C $(FINERACT_DIR) config core.longpaths true && \
+		git -C $(FINERACT_DIR) rm -rq --cached . && git -C $(FINERACT_DIR) reset -q --hard && echo "Sous-module $(FINERACT_DIR) réextrait en LF"; fi
 	@if [ "$(LINK_MODE)" = "copy" ]; then \
 		rm -rf "$(CUSTOM_LINK)" && mkdir -p "$(CUSTOM_LINK)" && cp -R "$(CUSTOM_SRC)/." "$(CUSTOM_LINK)/" && echo "Copie synchronisée : $(CUSTOM_LINK)"; \
 	elif [ -e "$(CUSTOM_LINK)" ]; then echo "Lien déjà présent : $(CUSTOM_LINK)"; \

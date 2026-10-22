@@ -7,3 +7,9 @@ base {
 }
 
 apply from: 'dependencies.gradle'
+
+// L'audit Apache RAT exige l'en-tête de licence de la fondation Apache.
+// Le code NKULKAP n'en relève pas (licence à décider, cahier section 9.3).
+tasks.named('rat') {
+    enabled = false
+}
