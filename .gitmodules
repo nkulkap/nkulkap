@@ -2,3 +2,7 @@
 	path = core/fineract
 	url = https://github.com/nkulkap/nkulkap-fineract.git
 	branch = nkulkap/main
+[submodule "apps/nkulkap-field"]
+	path = apps/nkulkap-field
+	url = https://github.com/nkulkap/nkulkap-field.git
+	branch = dev

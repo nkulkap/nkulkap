@@ -53,7 +53,8 @@ test: ## Lance les tests d'un composant : make test COMPONENT=<core|sync|edge|pa
 	@case "$(COMPONENT)" in \
 		core) cd $(FINERACT_DIR) && ./gradlew $(GRADLE_FLAGS) $(addsuffix :test,$(NKULKAP_MODULES)) ;; \
 		rules) cd services/nkulkap-rules && go vet ./... && go test ./... ;; \
-		sync|edge|pay|sentinel|field|web) echo "COMPONENT=$(COMPONENT) : pas encore créé (voir docs/STATUS.md)." >&2; exit 1 ;; \
+		field) echo "::notice::COMPONENT=field : aucun test exécuté, compilation de apps/nkulkap-field reportée au poste puissant (étape 1.6 partielle, docs/STATUS.md)." ;; \
+		sync|edge|pay|sentinel|web) echo "COMPONENT=$(COMPONENT) : pas encore créé (voir docs/STATUS.md)." >&2; exit 1 ;; \
 		*) echo "Préciser COMPONENT=<core|sync|edge|pay|rules|sentinel|field|web>." >&2; exit 2 ;; \
 	esac
 
