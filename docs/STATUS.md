@@ -59,6 +59,7 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 | Étape | Statut | Vérification |
 |---|---|---|
 | 1.1 Tour de Fineract | Fait (2026-10-22) | `make seed` (`testing/fixtures/seed/seed.py`, Python sans dépendance) crée par API, avec des données FICTIVES : devise XAF, 2 agences, 3 employés, 14 comptes comptables, 1 produit d'épargne et 1 produit de prêt en comptabilité de caisse, 10 clients, 10 comptes d'épargne avec dépôt, 1 prêt décaissé. Rejouable : vérifié sur base vierge (`make down && make up`, puis `make seed` deux fois) ; `make seed-test` (seed deux fois, état identique) : OK. Note [fineract-api-usage.md](specs/fineract-api-usage.md) : `glaccounts`, `journalentries`, `savingsaccounts/{id}/transactions` (`deposit`, `withdrawal`, `force-withdrawal`), `loans/{id}/transactions` (`repayment`), `runreports`, `externalevents/configuration`, avec réponses et erreurs observées. |
+| 1.2 Idempotence de Fineract | Fait (2026-10-22) | `IdempotencySpikeIT` (`testing/spikes`, `make spike-test SPIKE=IdempotencySpikeIT`, pile et seed requis) : 9 cas verts. **Une seule transaction dans les cas (a) à (e)** : rejeu servi depuis le cache (`x-served-from-cache: true`, corps identique), y compris en concurrence (4 envois × 10 tours) et après redémarrage de Fineract. Note [idempotence-fineract.md](specs/idempotence-fineract.md). Aucun doublon, donc pas de table de déduplication ; risques relevés (clé unique par action/entité et non par compte, refus mis en cache, clé bloquée « en cours » après arrêt brutal) et parade par `externalId` = `op_id` : [ADR-016](adr/0016-double-garde-idempotency-key-et-externalid.md), **statut Proposé, à valider**. |
 
 Constats de 1.1 utiles à la suite : XAF doit être déclarée dans `/currencies` sinon les écritures manuelles sont refusées ; `GET /journalentries` ne filtre pas par `referenceNumber` ; `PUT /externalevents/configuration` avec un type inconnu renvoie 500.
 
@@ -71,6 +72,7 @@ Constats de 1.1 utiles à la suite : XAF doit être déclarée dans `/currencies
 - Liaison des modules custom sous Windows par jonction NTFS plutôt que par lien symbolique ou copie (ADR-013).
 - Groupe Gradle `cm.nkulkap.fineract` choisi par analogie avec `com.acme.fineract` : le cahier ne fixe pas de nom de paquet.
 - Modules NKULKAP : conventions Gradle propres (`core/custom-nkulkap/nkulkap-conventions.gradle`, ADR-015) — palantir-java-format, en-tête propriétaire Circaura Sarl, sans audit Apache RAT ni en-tête Apache.
+- Tests d'exploration de la Phase 1 dans un projet Gradle autonome `testing/spikes` (JUnit, HTTP contre la pile), lancé avec le wrapper de Fineract : pas de compilation de Fineract, donc compatible avec la pile démarrée sur le poste de 7,4 Go. Hors CI (pile requise).
 - Seed de l'étape 1.1 écrit en Python (bibliothèque standard seule) : le cahier ne fixe pas de langage pour `testing/fixtures/seed`. `make seed` est avancé de la phase 2 à l'étape 1.1 ; `make fixtures` reste pour la phase 2.
 - Licence : propriétaire, © Circaura Sarl (`LICENSE`) ; composants tiers dans `NOTICE`. Les deux dépôts restent publics.
 

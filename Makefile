@@ -17,6 +17,7 @@ LINK_MODE      ?= link
 endif
 COMPONENT      ?=
 SCENARIO       ?=
+SPIKE          ?=
 SIZE           ?= small
 # python3 sous Linux ; sous Windows, python3 peut n'être que l'alias du Store : repli sur python.
 PYTHON         ?= $(shell python3 -c '' >/dev/null 2>&1 && echo python3 || echo python)
@@ -24,7 +25,7 @@ GRADLE_FLAGS   ?=
 # Modules Fineract NKULKAP : chaque core/custom-nkulkap/<domaine>/<module>/build.gradle -> :custom:nkulkap:<domaine>:<module>
 NKULKAP_MODULES := $(subst /,:,$(patsubst $(CUSTOM_SRC)/%/build.gradle,:custom:nkulkap:%,$(wildcard $(CUSTOM_SRC)/*/*/build.gradle)))
 
-.PHONY: help bootstrap build test e2e up down logs seed seed-test fixtures
+.PHONY: help bootstrap build test e2e up down logs seed seed-test spike-test fixtures
 
 help: ## Liste les cibles disponibles
 	@grep -E '^[a-z0-9-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
@@ -72,6 +73,9 @@ seed: ## Charge le jeu de données FICTIF de l'étape 1.1 dans la pile locale (r
 
 seed-test: ## Vérifie que make seed est complet et rejouable (pile démarrée)
 	$(PYTHON) -I testing/fixtures/seed/test_seed.py
+
+spike-test: ## Tests d'exploration Phase 1 contre la pile (make up && make seed) : make spike-test [SPIKE=IdempotencySpikeIT]
+	$(FINERACT_DIR)/gradlew --no-daemon -p testing/spikes spikeTest $(if $(SPIKE),--tests 'cm.nkulkap.spikes.$(SPIKE)')
 
 fixtures: ## Génère les données de test FICTIVES : make fixtures SIZE=small
 	@echo "Générateur de fixtures pas encore écrit (phase 2, SIZE=$(SIZE))." >&2; exit 1
