@@ -20,3 +20,4 @@ Chaque ADR décrit un contexte, une décision et ses conséquences ; un nouvel A
 | ADR-014 | [Intégration continue sur GitHub Actions, avec bascule prévue vers TeamCity](0014-ci-github-actions-bascule-teamcity.md) | Accepté |
 | ADR-015 | [Conventions Gradle propres aux modules NKULKAP : formatage et en-tête de licence](0015-conventions-gradle-modules-nkulkap.md) | Accepté |
 | ADR-016 | [Double garde contre les doublons : `Idempotency-Key` et `externalId` égaux à `op_id`](0016-double-garde-idempotency-key-et-externalid.md) | Proposé |
+| ADR-017 | [Écritures comptables : pas d'événement externe Fineract, lecture par l'API](0017-ecritures-comptables-sans-evenement-externe.md) | Proposé |

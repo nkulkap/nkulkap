@@ -19,7 +19,7 @@ Chaque exploration produit **un test automatisé** qui fige le comportement obse
 - **Si un cas produit un doublon** : `nkulkap-sync` doit ajouter sa propre table de déduplication avant l'appel, avec vérification par `externalId` ou par `referenceNumber`. Rédiger un ADR.
 
 **Étape 1.3 — Événements externes Kafka**
-- **Faire** : activer les événements nécessaires (clients, transactions d'épargne et de prêt, écritures comptables) ; consommateur jetable qui décode l'Avro avec les schémas de `fineract-avro-schemas`. Lister les types d'événements, leurs champs utiles et leur latence.
+- **Faire** : activer les événements nécessaires (clients, transactions d'épargne et de prêt ; Fineract ne publie pas d'événement d'écriture comptable, voir ADR-017) ; consommateur jetable qui décode l'Avro avec les schémas de `fineract-avro-schemas`. Lister les types d'événements, leurs champs utiles et leur latence.
 - **Terminé quand** : la note `docs/specs/fineract-events.md` existe et un test lit un événement de dépôt.
 
 **Étape 1.4 — Module custom minimal**

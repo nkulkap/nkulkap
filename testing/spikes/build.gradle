@@ -3,6 +3,10 @@ plugins {
     id 'java'
 }
 
+// Jar des schémas Avro de Fineract ; ExternalEventsSpikeIT est sauté s'il manque.
+def avroSchemasJar = fileTree(dir: '../../core/fineract/fineract-avro-schemas/build/libs', include: 'fineract-avro-schemas-*.jar',
+        exclude: '*-sources.jar')
+
 repositories {
     mavenCentral()
 }
@@ -12,6 +16,10 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.22.3'
+    testImplementation 'org.apache.kafka:kafka-clients:4.2.1'
+    testImplementation 'org.apache.avro:avro:1.12.1'
+    // Classes Avro générées par Fineract (construites avec l'image : ./gradlew :custom:docker:jibDockerBuild).
+    testImplementation files(avroSchemasJar)
 }
 
 tasks.withType(JavaCompile).configureEach {

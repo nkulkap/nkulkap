@@ -1,6 +1,11 @@
 {
   "_comment": "DONNÉES FICTIVES. Aucun nom, numéro ou montant ne correspond à une personne ou un établissement réel. Montants en XAF entiers.",
   "openingDate": "2026-01-02",
+  "externalEvents": [
+    "ClientCreateBusinessEvent", "ClientActivateBusinessEvent",
+    "SavingsDepositBusinessEvent", "SavingsWithdrawalBusinessEvent", "SavingsAccountForceWithdrawalBusinessEvent",
+    "LoanDisbursalTransactionBusinessEvent", "LoanTransactionMakeRepaymentPostBusinessEvent", "LoanBalanceChangedBusinessEvent"
+  ],
   "offices": [
     {"externalId": "SEED-AG-DLA", "name": "FICTIF Agence Douala Akwa"},
     {"externalId": "SEED-AG-YDE", "name": "FICTIF Agence Yaoundé Mvog-Mbi"}
