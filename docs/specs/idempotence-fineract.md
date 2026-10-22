@@ -34,6 +34,7 @@
 | (f) envoi refusé (`400`, date future), puis corrigé avec la même clé | Le corrigé reçoit le `400` d'origine, `x-served-from-cache: true` ; avec une clé neuve : `200`. | Une clé ayant obtenu un 4xx est « brûlée ». |
 | (g) aucun en-tête | Deux envois → deux dépôts (`resourceId` 25 et 26). | Doublon : la clé est indispensable. |
 | (h) clé neuve mais même `externalId` de transaction | Dépôt : `403` `error.msg.data.integrity.issue` (contrainte `uk_m_sat_external_id`). Remboursement : `400` `value.must.be.unique`. Une seule transaction ; lecture `GET /savingsaccounts/{id}/transactions/external-id/{externalId}`, et `resourceExternalId` dans la réponse d'un remboursement. | Aucun : seconde garde, indépendante de la clé. |
+| (i) et (j) idem sur un retrait puis sur un retrait forcé (dans la limite du solde) | `403` `error.msg.data.integrity.issue` (même contrainte `uk_m_sat_external_id`) ; un seul mouvement ; relecture par `externalId`. Relecture d'un remboursement : `GET /loans/{loanId}/transactions/external-id/{externalId}`. Écritures d'un remboursement : `GET /journalentries?transactionId=L<id>`. | Aucun. |
 | Arrêt brutal pendant le traitement (non testé, lecture du code) | La ligne du registre est validée avant le traitement avec `status` = en cours. Si Fineract s'arrête avant la fin, la transaction métier est annulée mais la ligne reste « en cours » ; aucun code ne la nettoie. Tout rejeu avec cette clé reçoit alors 425 indéfiniment. | Blocage sans doublon : le client doit pouvoir conclure autrement (voir ADR-016). |
 
 ## Règles pour les satellites

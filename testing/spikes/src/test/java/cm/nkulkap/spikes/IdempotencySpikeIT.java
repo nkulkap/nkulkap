@@ -128,6 +128,19 @@ class IdempotencySpikeIT {
         }
         assertEquals(1, repayments);
         assertEquals(20_000, l.path("summary").path("totalRepayment").decimalValue().longValueExact());
+        // Écritures du remboursement : transactionId au format L<id> (ADR-017), équilibrées (capital + intérêts).
+        long debits = 0;
+        long credits = 0;
+        for (JsonNode e : API.ok(API.get("/journalentries?transactionId=L" + first.resourceId()), "journal").path("pageItems")) {
+            long amount = e.path("amount").decimalValue().longValueExact();
+            if ("DEBIT".equals(e.path("entryType").path("value").asText())) {
+                debits += amount;
+            } else {
+                credits += amount;
+            }
+        }
+        assertEquals(20_000, debits);
+        assertEquals(20_000, credits);
     }
 
     @Test
@@ -278,10 +291,50 @@ class IdempotencySpikeIT {
         assertEquals(loanExt, rep1.body().path("resourceExternalId").asText());
         assertEquals(400, rep2.status());
         assertTrue(rep2.raw().contains("value.must.be.unique"), rep2.raw());
+        assertEquals(rep1.resourceId(),
+                API.ok(API.get("/loans/" + loan + "/transactions/external-id/" + loanExt), "loan tx")
+                        .path("id")
+                        .asLong(),
+                "relecture d'un remboursement par externalId (ADR-016)");
+    }
+
+    /** Cas i et j : même externalId, clé neuve, sur un retrait puis sur un retrait forcé. */
+    private static void assertSavingsExternalIdUnique(String command, String label) throws Exception {
+        long account = API.newSavingsAccount(tag());
+        API.ok(postDeposit(account, deposit(50_000), newKey()), "deposit");
+        String ext = "SPIKE-OP-" + UUID.randomUUID();
+        Map<String, Object> body = dated("transactionDate", "2026-01-05", "transactionAmount", 10_000, "paymentTypeId", cash, "externalId", ext);
+        String path = "/savingsaccounts/" + account + "/transactions?command=" + command;
+
+        Response first = API.post(path, body, newKey());
+        Response second = API.post(path, body, newKey());
+        System.out.println("(" + label + ") " + command + ", clé neuve, même externalId : " + second);
+
+        assertEquals(200, first.status(), first.toString());
+        assertEquals(403, second.status(), "contrainte uk_m_sat_external_id");
+        assertEquals("error.msg.data.integrity.issue", second.body().path("userMessageGlobalisationCode").asText());
+        assertEquals(40_000, balance(account), "un seul " + command);
+        assertEquals(first.resourceId(),
+                API.ok(API.get("/savingsaccounts/" + account + "/transactions/external-id/" + ext), "tx")
+                        .path("id")
+                        .asLong());
     }
 
     @Test
-    @Order(9)
+    @Order(10)
+    void i_withdrawalExternalIdIsUnique() throws Exception {
+        assertSavingsExternalIdUnique("withdrawal", "i");
+    }
+
+    @Test
+    @Order(11)
+    void j_forceWithdrawalExternalIdIsUnique() throws Exception {
+        // Dans la limite du solde, le retrait forcé passe sans activer la configuration globale (étape 1.8).
+        assertSavingsExternalIdUnique("force-withdrawal", "j");
+    }
+
+    @Test
+    @Order(99)
     void e_replayAfterFineractRestart() throws Exception {
         long account = API.newSavingsAccount(tag());
         String key = newKey();
