@@ -1,0 +1,15 @@
+// rule: collecte/frais_collecte  version: 1.0.0
+// Répartit les frais de collecte d'un cycle entre le collecteur et l'EMF.
+vars {
+  monetary $frais
+  portion $part_collecteur
+  account $collecteur
+}
+
+send $frais (
+  source = @emf:frais_a_repartir allowing unbounded overdraft
+  destination = {
+    $part_collecteur to $collecteur
+    remaining to @emf:produits:commissions_collecte
+  }
+)

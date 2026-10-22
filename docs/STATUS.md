@@ -40,6 +40,7 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 - `~/.gradle/gradle.properties` ramène Gradle à `-Xmx3g`, 2 workers, sans parallélisme : le `-Xmx12g` de Fineract fait planter la JVM sur ce poste.
 - Le sous-module Fineract doit être extrait en LF (`core.autocrlf=false`) : en CRLF, le build réécrit les sources et échoue. `make bootstrap` le règle.
 - Ne pas compiler Fineract pendant que la pile Docker tourne (mémoire insuffisante pour les deux).
+- Go 1.27.0 installé par winget (`GoLang.Go`, `C:\Program Files\Go\bin`) le 2026-10-22 ; `go.mod` de `nkulkap-rules` exige Go ≥ 1.24.4 (minimum de Numscript).
 - Windows Defender : dossiers du projet et `~/.gradle` exclus de l'analyse en temps réel. Sans cela, la compilation de Fineract échoue par « Ressources système insuffisantes » (erreur 1450). La construction de l'image prend environ 11 min avec `-Dorg.gradle.workers.max=1` et `-Xmx2560m`.
 
 ### Dépôts
@@ -65,9 +66,16 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 | 1.4 Module custom minimal | Fait (2026-10-22) | `common/core` : migration `db/custom-changelog/0001_nkulkap_common_ping.xml` (table `nkulkap_ping`), ressource `GET /api/v1/nkulkap/ping` ; `common/starter` : auto-configuration (`AutoConfiguration.imports`). Image `fineract-custom` reconstruite : `curl …/api/v1/nkulkap/ping` → `{"module":"nkulkap-common","status":"ok"}` (valeur lue dans la table migrée). `make test COMPONENT=core` et `make build` (Spotless compris) : OK ; `NkulkapPingSpikeIT` : 2 cas verts. Note [module-custom-fineract.md](specs/module-custom-fineract.md). |
 | 1.5 Veto avant décaissement | Fait (2026-10-22) | `DisbursalVetoSpikeListener` (`common/core`), enregistré par `addPreBusinessEventListener(LoanDisbursalBusinessEvent.class, …)`, actif seulement si `NKULKAP_SPIKE_DISBURSAL_VETO_ENABLED=true` (pile de développement). `DisbursalVetoSpikeIT` : 2 cas verts. Prêt `TEST-VETO-…` : 403, code `error.msg.nkulkap.loan.disbursal.vetoed` remonté dans `errors[0]`, prêt resté `Approved`, aucune transaction ni écriture (annulation complète) ; prêt témoin décaissé. Tests unitaires du module : 4/4. Point d'extension validé, pas d'ADR. |
 | 1.6 Audit de l'app Android | En attente (2026-10-22) | Non commencée : l'émulateur Android ne tient pas à côté de la pile sur 7,4 Go de RAM. L'utilisateur prévoit d'ajouter 8 Go ; reprise après son accord. |
-| 1.7 Numscript | En attente (2026-10-22) | Non commencée : Go absent du poste ; installation soumise à l'accord de l'utilisateur. |
+| 1.7 Numscript | Fait (2026-10-22) | `services/nkulkap-rules` (Go, Numscript v0.0.24) : `internal/engine` exécute une règle en calcul pur (magasin de soldes vide, montants entiers `int64`) ; commande `cmd/nkulkap-rules <règle.num> <entrée.json>`. Règles de l'annexe B dans `rules/collecte/frais_collecte.num` et `rules/momo/frais_retrait.num`. `make test COMPONENT=rules` (`go vet` + `go test ./...`) : vert ; sorties exactes de l'annexe B retrouvées (1 240 / 1 860 ; 162 / 252 / 586) et somme conservée. |
 
 Constats de 1.1 utiles à la suite : XAF doit être déclarée dans `/currencies` sinon les écritures manuelles sont refusées ; `GET /journalentries` ne filtre pas par `referenceNumber` ; `PUT /externalevents/configuration` avec un type inconnu renvoie 500.
+
+## À faire sur le poste puissant
+
+Le poste de développement (7,4 Go de RAM, barrette d'extension incompatible) ne fait pas tourner certains travaux. Ils attendent le PC fixe de l'utilisateur, aujourd'hui hors réseau :
+- 1.6 : compilation de `apps/nkulkap-field` et parcours du mode hors-ligne sur émulateur Android (l'audit par lecture du code se fait sur ce poste).
+- Phase 7 : écrans Android et tests sur émulateur.
+- Phase 12 : scénarios de bout en bout avec la pile complète et le profil `obs` ; tests de charge.
 
 ## Écarts
 
