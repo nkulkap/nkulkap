@@ -8,7 +8,9 @@ SHELL := bash
 FINERACT_DIR   := core/fineract
 CUSTOM_SRC     := core/custom-nkulkap
 CUSTOM_LINK    := $(FINERACT_DIR)/custom/nkulkap
-COMPOSE        := docker compose -f deploy/compose/dev.yml
+# basic : authentification Basic de Fineract (outillage de développement) ; oidc : Fineract serveur de ressources Keycloak (ADR-018)
+AUTH           ?= basic
+COMPOSE        := docker compose -f deploy/compose/dev.yml$(if $(filter oidc,$(AUTH)), -f deploy/compose/oidc.yml)
 # link : lien symbolique ; junction : jonction NTFS (Windows) ; copy : copie (dernier recours). Voir ADR-013.
 ifneq (,$(findstring MINGW,$(shell uname -s))$(findstring MSYS,$(shell uname -s)))
 LINK_MODE      ?= junction
@@ -26,7 +28,7 @@ GRADLE_FLAGS   ?=
 # Modules Fineract NKULKAP : chaque core/custom-nkulkap/<domaine>/<module>/build.gradle -> :custom:nkulkap:<domaine>:<module>
 NKULKAP_MODULES := $(subst /,:,$(patsubst $(CUSTOM_SRC)/%/build.gradle,:custom:nkulkap:%,$(wildcard $(CUSTOM_SRC)/*/*/build.gradle)))
 
-.PHONY: help bootstrap build test e2e up down logs seed seed-test spike-test lint-contracts fixtures fixtures-load fixtures-test toxiproxy toxiproxy-test
+.PHONY: help bootstrap build test e2e up down logs seed seed-test spike-test lint-contracts fixtures fixtures-load fixtures-test toxiproxy toxiproxy-test identity-provision identity-export identity-test
 
 help: ## Liste les cibles disponibles
 	@grep -E '^[a-z0-9-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
@@ -97,3 +99,12 @@ toxiproxy: ## Applique un profil réseau dégradé à Fineract (pile démarrée)
 
 toxiproxy-test: ## Tests du harnais réseau ; reponse_perdue contre la pile (make up && make seed)
 	cd testing/toxiproxy && go vet ./... && NKULKAP_STACK=1 go test -count=1 -v ./...
+
+identity-provision: ## Provisionne le royaume Keycloak nkulkap et les rôles/utilisateurs Fineract FICTIFS (pile démarrée en AUTH=basic)
+	$(PYTHON) -I deploy/keycloak/provision.py
+
+identity-export: ## Exporte le royaume nkulkap vers deploy/keycloak/realm-nkulkap.json
+	bash deploy/keycloak/export.sh
+
+identity-test: ## Vérifie l'authentification Keycloak et les autorisations Fineract (pile en AUTH=oidc)
+	$(PYTHON) -I testing/identity/test_identity.py

@@ -1,0 +1,19 @@
+{
+  "_comment": "Utilisateurs et secrets FICTIFS du royaume nkulkap, pile de développement locale uniquement. Ne jamais réutiliser en recette ou en production. Les secrets TOTP sont des chaînes brutes (clé HMAC), comme les stocke Keycloak.",
+  "tenant": "default",
+  "officeId": 1,
+  "users": [
+    {"username": "fictif.collecteur", "firstName": "Collecteur", "lastName": "FICTIF", "role": "collecteur", "password": "Fictif-Collecteur-2026!"},
+    {"username": "fictif.caissier", "firstName": "Caissier", "lastName": "FICTIF", "role": "caissier", "password": "Fictif-Caissier-2026!"},
+    {"username": "fictif.chefagence", "firstName": "Chef d'agence", "lastName": "FICTIF", "role": "chef_agence", "password": "Fictif-ChefAgence-2026!"},
+    {"username": "fictif.comptable", "firstName": "Comptable", "lastName": "FICTIF", "role": "comptable", "password": "Fictif-Comptable-2026!", "totpSecret": "FICTIF-totp-comptable-0001"},
+    {"username": "fictif.conformite", "firstName": "Conformité", "lastName": "FICTIF", "role": "conformite", "password": "Fictif-Conformite-2026!", "totpSecret": "FICTIF-totp-conformite-001"},
+    {"username": "fictif.auditeur", "firstName": "Auditeur", "lastName": "FICTIF", "role": "auditeur", "password": "Fictif-Auditeur-2026!"},
+    {"username": "fictif.admin", "firstName": "Administrateur", "lastName": "FICTIF", "role": "administrateur", "password": "Fictif-Admin-2026!", "totpSecret": "FICTIF-totp-admin-00000001"}
+  ],
+  "serviceClients": {
+    "nkulkap-sync": "FICTIF-secret-nkulkap-sync",
+    "nkulkap-pay": "FICTIF-secret-nkulkap-pay",
+    "nkulkap-sentinel": "FICTIF-secret-nkulkap-sentinel"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "_comment": "Rôles NKULKAP (section 9.1) : même nom dans Keycloak (royaume nkulkap) et dans Fineract. Fineract décide des autorisations à partir de SES rôles ; Keycloak authentifie et impose la double authentification. Permissions FICTIVES, à valider avec les EMF pilotes.",
+  "mfaRole": "mfa_requise",
+  "roles": {
+    "collecteur": {
+      "description": "Agent de collecte terrain",
+      "mfa": false,
+      "permissions": ["READ_CLIENT", "CREATE_CLIENT", "READ_SAVINGSACCOUNT", "DEPOSIT_SAVINGSACCOUNT", "READ_LOAN", "REPAYMENT_LOAN"]
+    },
+    "caissier": {
+      "description": "Guichetier d'agence",
+      "mfa": false,
+      "permissions": ["READ_CLIENT", "CREATE_CLIENT", "READ_SAVINGSACCOUNT", "DEPOSIT_SAVINGSACCOUNT", "WITHDRAWAL_SAVINGSACCOUNT", "READ_LOAN", "REPAYMENT_LOAN"]
+    },
+    "chef_agence": {
+      "description": "Responsable d'agence",
+      "mfa": false,
+      "permissions": [
+        "READ_CLIENT", "CREATE_CLIENT", "READ_SAVINGSACCOUNT", "DEPOSIT_SAVINGSACCOUNT", "WITHDRAWAL_SAVINGSACCOUNT",
+        "APPROVE_SAVINGSACCOUNT", "ACTIVATE_SAVINGSACCOUNT", "FORCE_WITHDRAWAL_SAVINGSACCOUNT",
+        "READ_LOAN", "REPAYMENT_LOAN", "APPROVE_LOAN", "DISBURSE_LOAN"
+      ]
+    },
+    "comptable": {
+      "description": "Comptable (double authentification)",
+      "mfa": true,
+      "permissions": ["READ_GLACCOUNT", "CREATE_GLACCOUNT", "READ_JOURNALENTRY", "CREATE_JOURNALENTRY", "READ_ACCOUNTINGRULE", "READ_REPORT"]
+    },
+    "conformite": {
+      "description": "Responsable conformité LAB-FT (double authentification)",
+      "mfa": true,
+      "permissions": ["READ_CLIENT", "READ_SAVINGSACCOUNT", "READ_LOAN", "READ_JOURNALENTRY", "READ_REPORT", "BLOCKDEBIT_SAVINGSACCOUNT", "UNBLOCKDEBIT_SAVINGSACCOUNT"]
+    },
+    "auditeur": {
+      "description": "Auditeur, lecture seule",
+      "mfa": false,
+      "permissions": ["ALL_FUNCTIONS_READ"]
+    },
+    "administrateur": {
+      "description": "Administrateur (double authentification)",
+      "mfa": true,
+      "permissions": ["ALL_FUNCTIONS"]
+    }
+  },
+  "clients": {
+    "nkulkap-web": {"type": "public", "redirectUris": ["http://localhost:4200/*"], "webOrigins": ["http://localhost:4200"]},
+    "nkulkap-field": {"type": "public", "redirectUris": ["cm.nkulkap.field:/oauth2redirect"]},
+    "nkulkap-sync": {"type": "service"},
+    "nkulkap-pay": {"type": "service"},
+    "nkulkap-sentinel": {"type": "service"},
+    "nkulkap-tests": {"type": "tests", "_comment": "Développement uniquement : mot de passe direct (direct grant) pour les tests automatisés. Absent en recette et en production."}
+  }
+}
