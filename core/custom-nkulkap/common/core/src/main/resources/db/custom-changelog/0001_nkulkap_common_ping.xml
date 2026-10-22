@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright (c) 2026 Circaura Sarl. Tous droits réservés.
+    Table témoin du module commun NKULKAP (étape 1.4), lue par GET /v1/nkulkap/ping.
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <changeSet author="nkulkap" id="nkulkap-common-0001-ping">
+        <createTable tableName="nkulkap_ping">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="module" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <insert tableName="nkulkap_ping">
+            <column name="id" valueNumeric="1"/>
+            <column name="module" value="nkulkap-common"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

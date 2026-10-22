@@ -15,7 +15,7 @@ Code NKULKAP qui s'exécute dans Fineract, sans modifier son cœur (ADR-002).
 | `tontine` | L4 | `core`, `service`, `job`, `starter` |
 | `reporting` | L7 | `core`, `service`, `starter` |
 
-Seul `common/core` existe pour l'instant.
+`common/core` (ressources, migrations, écouteurs) et `common/starter` (auto-configuration) existent.
 
 ## Ajouter un module
 
