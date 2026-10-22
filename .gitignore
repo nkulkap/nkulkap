@@ -32,3 +32,6 @@ deploy/compose/.env
 
 # Python
 __pycache__/
+
+# Fixtures générées (make fixtures)
+testing/fixtures/out/

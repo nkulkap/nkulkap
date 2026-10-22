@@ -25,7 +25,7 @@ GRADLE_FLAGS   ?=
 # Modules Fineract NKULKAP : chaque core/custom-nkulkap/<domaine>/<module>/build.gradle -> :custom:nkulkap:<domaine>:<module>
 NKULKAP_MODULES := $(subst /,:,$(patsubst $(CUSTOM_SRC)/%/build.gradle,:custom:nkulkap:%,$(wildcard $(CUSTOM_SRC)/*/*/build.gradle)))
 
-.PHONY: help bootstrap build test e2e up down logs seed seed-test spike-test lint-contracts fixtures
+.PHONY: help bootstrap build test e2e up down logs seed seed-test spike-test lint-contracts fixtures fixtures-load fixtures-test
 
 help: ## Liste les cibles disponibles
 	@grep -E '^[a-z0-9-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
@@ -82,5 +82,11 @@ spike-test: ## Tests d'exploration Phase 1 contre la pile (make up && make seed)
 lint-contracts: ## Valide les contrats OpenAPI (Redocly) et les schémas d'événements Avro (Node >= 22.12)
 	cd contracts && npm ci --no-audit --no-fund && npm run lint
 
-fixtures: ## Génère les données de test FICTIVES : make fixtures SIZE=small
-	@echo "Générateur de fixtures pas encore écrit (phase 2, SIZE=$(SIZE))." >&2; exit 1
+fixtures: ## Génère les données de test FICTIVES reproductibles dans testing/fixtures/out/<SIZE>/ : make fixtures SIZE=small|large
+	$(PYTHON) -I testing/fixtures/generator/generate.py $(SIZE)
+
+fixtures-load: ## Charge testing/fixtures/out/<SIZE>/ dans Fineract par l'API, rejouable (pile démarrée) : make fixtures-load SIZE=small
+	$(PYTHON) -I testing/fixtures/generator/load.py $(SIZE)
+
+fixtures-test: ## Teste le générateur de fixtures (sans pile)
+	$(PYTHON) -I testing/fixtures/generator/test_generator.py

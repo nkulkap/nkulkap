@@ -76,6 +76,7 @@ Constats de 1.1 utiles à la suite : XAF doit être déclarée dans `/currencies
 | Étape | Statut | Vérification |
 |---|---|---|
 | 2.1 Contrats | Fait (2026-10-22) | `contracts/sync-v1.openapi.yaml` (annexe C, D.2, FR-L5), `pay-v1.openapi.yaml` (D.1, FR-L6), `sentinel-v1.openapi.yaml` (FR-L8), en OpenAPI 3.1 ; événements Avro dans `contracts/events/` : enveloppe `EventEnvelopeV1` (calquée sur `MessageV1` de Fineract), `op.posted`, `op.rejected`, `payment.*`, `tournee.*`, chacun avec un exemple FICTIF. `make lint-contracts` (Redocly CLI 2.60.0, règles `recommended` renforcées ; `avsc` 5.7.9 : syntaxe, conventions, montants entiers, aller-retour des exemples) : vert ; CI `ci-contracts`. Génération de code reportée à la phase de chaque service (`contracts/README.md`). |
+| 2.2 Générateur de données fictives | Fait (2026-10-22) | `testing/fixtures/generator/` : `make fixtures SIZE=small\|large` génère dans `testing/fixtures/out/<SIZE>/` (non versionné) des fichiers JSON Lines et un manifeste à empreintes SHA-256 ; graine fixe 20261022, date de fin fixe 2026-09-30, aucune dépendance à l'heure. Small : 2 agences, 5 collecteurs, 200 clients, 60 prêts, 1 013 mouvements, empreinte globale `cc36adb2…` identique à chaque exécution. Large : 10 agences, 50 collecteurs, 20 000 clients, 6 000 prêts, 311 004 mouvements, 12 mois (≈ 4 s, 47 Mo). Noms camerounais francophones et anglophones (20 %), numéros FICTIFS `+2376999…`, identifiants `FICTIF-S-…` / `FICTIF-L-…`. `make fixtures-test` : 10 tests verts. `make fixtures-load SIZE=small` : chargé par l'API sur base vierge en 263 s ; rejeu complet sans fichier de reprise : 2 185 écritures avant et après, aucun doublon. **Reste** : chargement du jeu large non fait sur ce poste (311 004 mouvements, plusieurs heures). |
 
 ## À faire sur le poste puissant
 
@@ -99,5 +100,7 @@ Le poste de développement (7,4 Go de RAM, barrette d'extension incompatible) ne
 - Licence : propriétaire, © Circaura Sarl (`LICENSE`) ; composants tiers dans `NOTICE`. Les deux dépôts restent publics.
 
 ## Fichiers FICTIFS utilisés
+
+- `testing/fixtures/generator/names.json` (étape 2.2) : noms camerounais FICTIFS ; préfixe mobile `+2376999` choisi pour le projet, **[À VÉRIFIER]** : plage réellement réservée aux tests auprès du régulateur.
 
 - `testing/fixtures/seed/seed-data.json` (étape 1.1) : agences, employés, clients et montants FICTIFS ; comptes comptables `FICTIF-xxxx` en attendant le plan comptable des EMF (phase 3).
