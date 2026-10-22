@@ -1,0 +1,43 @@
+# Copyright (c) 2026 Circaura Sarl. Tous droits réservés.
+# Profils de réseau dégradé (section 10.2 du cahier), appliqués par `toxictl` à Toxiproxy.
+# Toxiproxy n'a pas de perte de paquets : on la simule par des toxiques appliqués à une fraction des
+# connexions (`toxicity`, probabilité entre 0 et 1, tirée par connexion).
+
+# Mandataires créés par `toxictl init` : les clients de test passent par listen, Toxiproxy relaie vers upstream.
+proxies:
+  fineract:
+    listen: 0.0.0.0:21000
+    upstream: fineract:8443
+  kafka:
+    listen: 0.0.0.0:21001
+    upstream: kafka:9092
+
+profiles:
+  # Collecteur en brousse : 600 ms ± 300 ms, 40 kbit/s (5 Ko/s), 10 % des connexions coupées.
+  edge_rural:
+    - {type: latency, stream: downstream, attributes: {latency: 600, jitter: 300}}
+    - {type: bandwidth, stream: downstream, attributes: {rate: 5}}
+    - {type: bandwidth, stream: upstream, attributes: {rate: 5}}
+    - {type: reset_peer, stream: downstream, toxicity: 0.10, attributes: {timeout: 2000}}
+  # Ville : 150 ms ± 80 ms, 1 Mbit/s (125 Ko/s), 1 % de coupures.
+  3g_urbain:
+    - {type: latency, stream: downstream, attributes: {latency: 150, jitter: 80}}
+    - {type: bandwidth, stream: downstream, attributes: {rate: 125}}
+    - {type: bandwidth, stream: upstream, attributes: {rate: 125}}
+    - {type: reset_peer, stream: downstream, toxicity: 0.01, attributes: {timeout: 1000}}
+  # Agence rurale par satellite : 700 ms ± 100 ms, 512 kbit/s (64 Ko/s), 2 % de coupures.
+  vsat_agence:
+    - {type: latency, stream: downstream, attributes: {latency: 700, jitter: 100}}
+    - {type: bandwidth, stream: downstream, attributes: {rate: 64}}
+    - {type: bandwidth, stream: upstream, attributes: {rate: 64}}
+    - {type: reset_peer, stream: downstream, toxicity: 0.02, attributes: {timeout: 2000}}
+  # La requête part en entier, le serveur la traite, la réponse n'arrive jamais : aucun octet ne revient au
+  # client et la connexion est fermée. À appliquer sur une connexion déjà établie (TLS négocié), sinon la
+  # poignée de main elle-même échoue : voir `toxictl` et le test reponse_perdue.
+  reponse_perdue:
+    - {type: limit_data, stream: downstream, attributes: {bytes: 0}}
+  # Lien coupé : plus rien ne passe dans les deux sens. La durée (72 h simulées pour E2E-03) est pilotée par le
+  # scénario, qui retire le profil avec `toxictl reset`.
+  coupure_longue:
+    - {type: timeout, stream: upstream, attributes: {timeout: 0}}
+    - {type: timeout, stream: downstream, attributes: {timeout: 0}}
