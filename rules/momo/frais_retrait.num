@@ -1,0 +1,20 @@
+// rule: momo/frais_retrait  version: 1.0.0
+// Répartit les frais TTC d'un retrait mobile money : TVA, agent, EMF.
+// Part de TVA dans un montant TTC à 19,25 % : 19,25 / 119,25 = 77/477 (taux d'exemple, I-06).
+vars {
+  monetary $frais_ttc
+  portion $taux_tva
+  portion $part_agent
+  account $agent
+}
+
+send $frais_ttc (
+  source = @emf:frais_a_repartir allowing unbounded overdraft
+  destination = {
+    $taux_tva to @etat:tva_collectee
+    remaining to {
+      $part_agent to $agent
+      remaining to @emf:produits:commissions_momo
+    }
+  }
+)
