@@ -1,6 +1,6 @@
 # NKULKAP — Avancement
 
-Dernière mise à jour : 2026-10-22. Plan détaillé : [section 11 du cahier](specs/NKULKAP_cahier_des_charges_et_plan.md), une fiche par phase dans [specs/sections/](specs/README.md).
+Dernière mise à jour : 2026-10-22. Plan détaillé : une fiche par phase dans [specs/sections/](specs/README.md) (référence complète : [cahier des charges](specs/NKULKAP_cahier_des_charges_et_plan.md)).
 
 ## Phases
 
@@ -8,8 +8,8 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 
 | Phase | Contenu | Statut | Modèle conseillé |
 |---|---|---|---|
-| 0 | Préparer : dépôts, outillage, pile de développement | Terminée le 2026-10-22, avec réserves (voir détail) | Sonnet pour squelette, ADR, Compose, CI ; Opus pour Makefile, choix du fork, relecture |
-| 1 | Comprendre : explorations et vérifications d'hypothèses | À faire | Opus pilote et conclut ; Haiku (`fineract-explorer`) pour les recherches |
+| 0 | Préparer : dépôts, outillage, pile de développement | Terminée et fusionnée le 2026-10-22 | Sonnet pour squelette, ADR, Compose, CI ; Opus pour Makefile, choix du fork, relecture |
+| 1 | Comprendre : explorations et vérifications d'hypothèses | Prochaine | Opus pilote et conclut ; Haiku (`fineract-explorer`) pour les recherches |
 | 2 | Socle commun : contrats, données de test, réseau dégradé, identité | À faire | Opus pour contrats et identité (sécurité) ; Sonnet pour fixtures FICTIVES, profils Toxiproxy, Keycloak en suivant le modèle |
 | 3 | L1 Plan comptable et hors-bilan | À faire | Opus pour les règles comptables et le hors-bilan ; Sonnet pour CRUD, ressources REST, migrations |
 | 4 | L2 TEG et usure | À faire | Opus pour le calcul du TEG et son premier test ; Sonnet (`nkulkap-tests`) pour les cas supplémentaires, `nkulkap-i18n` pour la fiche TEG |
@@ -31,7 +31,7 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 | 0.2 Fork Fineract et modules custom | Fait (2026-10-22) | Fork public `nkulkap/nkulkap-fineract` (branche par défaut `nkulkap/main` = `b94b2ddf`), sous-module `core/fineract`, module `core/custom-nkulkap/common/core` (calqué sur `custom/acme/note/service`), jonction `core/fineract/custom/nkulkap` (ADR-013). `./gradlew projects` liste `:custom:nkulkap:common:core` ; `settings.gradle` identique à `b94b2ddf` ; `./gradlew :custom:nkulkap:common:core:build` (spotless compris, ADR-015) : BUILD SUCCESSFUL. |
 | 0.3 ADR | Fait | 13 fichiers dans `docs/adr/` (001 à 012 du cahier, 013 pour la jonction Windows), tous liés depuis `docs/adr/README.md`. |
 | 0.4 Pile de développement | Fait (2026-10-22) | `deploy/compose/dev.yml` : PostgreSQL 18.3, Kafka 4.3.2 (KRaft), Keycloak 26.8.1, Fineract (`fineract-custom`, construite par `./gradlew :custom:docker:jibDockerBuild`), Toxiproxy 2.13.0 ; Prometheus, Grafana et Loki sous le profil `obs`. Contrôles de santé sur chaque service ; fuseau du locataire `Africa/Douala` vérifié en base. Démarrage (images présentes, base vide) jusqu'à `GET /offices` = 200 : 238 s sur un poste de 7,4 Go ; ≈ 2,1 Go consommés. `make down` : 0 conteneur, volume ou réseau restant. Réserve : profil `obs` non démarré (mémoire du poste) ; `wget` dans l'image Loki non vérifié. |
-| 0.5 Intégration continue | Fait (2026-10-22) | GitHub Actions (ADR-014) : `ci-core`, `ci-sync`, `ci-edge`, `ci-pay`, `ci-rules`, `ci-sentinel`, `ci-field`, `ci-web` déclenchés par chemin, et `e2e-nightly` (vide). Cache Gradle, Cargo, sbt, Go et npm. Vérifié : le commit `7bd2c9a`, qui ne touche que `core/custom-nkulkap`, ne déclenche que `ci-core`, qui passe ([exécution 39782827373](https://github.com/nkulkap/nkulkap/actions/runs/39782827373)). Spotless actif sans dépendre d'Eclipse (ADR-015). Réserve : `e2e-nightly` ne s'activera qu'après fusion dans `main` (GitHub ne planifie que sur la branche par défaut). |
+| 0.5 Intégration continue | Fait (2026-10-22) | GitHub Actions (ADR-014) : `ci-core`, `ci-sync`, `ci-edge`, `ci-pay`, `ci-rules`, `ci-sentinel`, `ci-field`, `ci-web` déclenchés par chemin, et `e2e-nightly` (vide). Cache Gradle, Cargo, sbt, Go et npm. Vérifié : le commit `7bd2c9a`, qui ne touche que `core/custom-nkulkap`, ne déclenche que `ci-core`, qui passe ([exécution 39782827373](https://github.com/nkulkap/nkulkap/actions/runs/39782827373)). Spotless actif sans dépendre d'Eclipse (ADR-015). `e2e-nightly` actif sur `main` depuis la fusion. |
 
 ### Poste de développement (Windows, 7,4 Go de RAM)
 
@@ -48,11 +48,12 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 - Fork : https://github.com/nkulkap/nkulkap-fineract (public, fork d'`apache/fineract`). Base `b94b2ddf` plutôt que l'étiquette `1.16.0`, car celle-ci (19/10/2026) est antérieure au commit de référence (20/10/2026), conformément à la règle de l'étape 0.2.
 - Sous Git pour Windows, cloner Fineract avec `-c http.version=HTTP/1.1 -c core.longpaths=true` : en HTTP/2, le clone échoue (`curl 92`, `early EOF`).
 
-### Reste à faire avant la Phase 1
+### Bilan de la Phase 0
 
-- Fusionner `phase-0/fineract` dans `main`.
-- `CLAUDE.md` pointe vers les fiches de phase de `docs/specs/sections/` (accord de l'utilisateur du 2026-10-22).
-- GNU Make toujours absent du poste Windows : `make help` vérifié par sa commande seule ; `make bootstrap` et `make build` vérifiés sous Linux par la CI.
+- Fusionnée dans `main` le 2026-10-22 : [PR #1](https://github.com/nkulkap/nkulkap/pull/1), commit de fusion `75bab1b`.
+- `e2e-nightly` actif sur `main` (planifié chaque nuit à 01:00 UTC) ; déclenchement manuel réussi ([exécution 39786846059](https://github.com/nkulkap/nkulkap/actions/runs/39786846059)).
+- `CLAUDE.md` fait lire la fiche de la phase en cours plutôt que le cahier complet (accord de l'utilisateur du 2026-10-22).
+- Seul point ouvert : GNU Make absent du poste Windows. `make help` a été vérifié par sa commande seule ; `make bootstrap` et `make build` sont vérifiés sous Linux par la CI.
 
 ## Écarts
 
