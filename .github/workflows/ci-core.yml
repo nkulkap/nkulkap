@@ -28,10 +28,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    env:
-      # download.eclipse.org en arrêt temporaire depuis le 2026-10-22 : spotless ne peut pas s'exécuter.
-      # Retirer cette ligne dès que le site est rétabli (voir docs/STATUS.md).
-      SKIP_SPOTLESS: "1"
     steps:
       - uses: actions/checkout@v7
         with:
@@ -44,7 +40,8 @@ jobs:
           distribution: temurin
           java-version: "25"
 
-      # Cache des dépendances et des sorties Gradle, partagé entre les exécutions.
+      # Cache de ~/.gradle (dépendances, formateurs Spotless, données P2 d'Eclipse) partagé entre les exécutions :
+      # une panne d'un dépôt distant ne casse pas le build une fois le cache rempli (ADR-015).
       - uses: gradle/actions/setup-gradle@v6
 
       - name: Relier les modules NKULKAP à Fineract
@@ -52,3 +49,11 @@ jobs:
 
       - name: Compiler et tester les modules NKULKAP
         run: make build
+
+      # Jamais de contrôle sauté en silence : en cas d'échec, dire clairement si un dépôt de formateurs est en panne.
+      - name: Diagnostiquer un échec de téléchargement
+        if: failure()
+        run: |
+          if ! curl -sfL --max-time 20 https://download.eclipse.org/eclipse/updates/4.29/p2.index | grep -q 'metadata.repository'; then
+            echo "::error::download.eclipse.org est indisponible et le cache ne contient pas les artefacts Eclipse demandés. Relancer quand le site est rétabli ; ne pas désactiver spotless."
+          fi

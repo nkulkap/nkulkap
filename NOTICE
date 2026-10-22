@@ -1,0 +1,51 @@
+NKULKAP
+Copyright (c) 2026 Circaura Sarl. Tous droits réservés (voir LICENSE).
+
+NKULKAP intègre ou s'appuie sur les composants tiers ci-dessous. Ils ne sont pas couverts
+par la licence propriétaire de NKULKAP et restent soumis à leurs propres licences.
+
+------------------------------------------------------------------------------------------
+Apache Fineract — core/fineract (sous-module, fork nkulkap/nkulkap-fineract)
+Licence : Apache License 2.0 (core/fineract/LICENSE_SOURCE, core/fineract/APACHE_LICENSETEXT.md)
+
+Texte de la notice d'Apache Fineract, reproduit comme l'exige la licence :
+
+    Apache Fineract
+    Copyright 2008-2025 The Apache Software Foundation
+
+    This product includes software developed at
+    The Apache Software Foundation (http://www.apache.org/).
+
+Obligations retenues :
+- conserver dans le fork les fichiers LICENSE_SOURCE, NOTICE_SOURCE, LICENSE_RELEASE,
+  NOTICE_RELEASE et le dossier licenses/ ;
+- tout fichier de Fineract modifié porte une mention visible de la modification ;
+- toute distribution binaire, y compris l'image Docker fineract-custom, inclut la licence
+  Apache 2.0 et les notices NOTICE_RELEASE et licenses/ de Fineract ;
+- ne pas utiliser les marques de la fondation Apache pour présenter NKULKAP.
+Le code NKULKAP placé dans custom/nkulkap (core/custom-nkulkap) est un ajout distinct,
+sous licence propriétaire (ADR-002, ADR-015).
+
+------------------------------------------------------------------------------------------
+openMF web-app et android-client — apps/nkulkap-web, apps/nkulkap-field (sous-modules à venir)
+Licence : Mozilla Public License 2.0
+
+Obligations retenues :
+- chaque fichier MPL-2.0 modifié reste sous MPL-2.0, avec ses mentions de licence ;
+- le code source de ces fichiers est mis à la disposition de quiconque reçoit l'application ;
+- les fichiers nouveaux écrits par Circaura Sarl peuvent rester propriétaires : le code
+  NKULKAP est donc placé dans des fichiers et modules nouveaux autant que possible.
+
+------------------------------------------------------------------------------------------
+Autres composants
+
+- Numscript (formancehq/numscript, licence MIT) : utilisé par nkulkap-rules (phase 5) ;
+  la mention de copyright est conservée dans toute distribution.
+- PostgreSQL, Apache Kafka, Keycloak, Toxiproxy, Prometheus, Grafana, Loki : utilisés comme
+  services séparés, sous forme d'images officielles non modifiées (deploy/compose/) ;
+  ils ne sont pas redistribués avec NKULKAP. Grafana et Loki sont sous AGPL-3.0 : ne pas les
+  modifier ni les intégrer au code NKULKAP sans revue juridique.
+
+------------------------------------------------------------------------------------------
+Ce fichier n'est pas un avis juridique : il est à faire valider par un juriste avant toute
+commercialisation (cahier des charges, section 9.3).

@@ -18,9 +18,7 @@ endif
 COMPONENT      ?=
 SCENARIO       ?=
 SIZE           ?= small
-# SKIP_SPOTLESS=1 saute le formatage spotless (panne de download.eclipse.org, voir docs/STATUS.md).
-SKIP_SPOTLESS  ?=
-GRADLE_FLAGS   ?= $(if $(SKIP_SPOTLESS),-x spotlessCheck -x spotlessGroovyGradle)
+GRADLE_FLAGS   ?=
 # Modules Fineract NKULKAP : chaque core/custom-nkulkap/<domaine>/<module>/build.gradle -> :custom:nkulkap:<domaine>:<module>
 NKULKAP_MODULES := $(subst /,:,$(patsubst $(CUSTOM_SRC)/%/build.gradle,:custom:nkulkap:%,$(wildcard $(CUSTOM_SRC)/*/*/build.gradle)))
 

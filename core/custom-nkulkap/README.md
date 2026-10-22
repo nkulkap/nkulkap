@@ -19,7 +19,7 @@ Seul `common/core` existe pour l'instant.
 
 ## Ajouter un module
 
-1. Créer `<domaine>/<module>/build.gradle` et `dependencies.gradle` en suivant `common/core`.
+1. Créer `<domaine>/<module>/build.gradle` et `dependencies.gradle` en suivant `common/core`, y compris `apply from: "${rootDir}/custom/nkulkap/nkulkap-conventions.gradle"` (ADR-015).
 2. Groupe Gradle `cm.nkulkap.fineract`, archive `nkulkap-fineract-<domaine>-<module>`.
 3. Tables préfixées `nkulkap_`, migrations dans `db/custom-changelog`.
 4. `make build` compile tous les modules ; la CI `ci-core` se déclenche sur toute modification de ce dossier.
