@@ -9,11 +9,18 @@ FINERACT_DIR   := core/fineract
 CUSTOM_SRC     := core/custom-nkulkap
 CUSTOM_LINK    := $(FINERACT_DIR)/custom/nkulkap
 COMPOSE        := docker compose -f deploy/compose/dev.yml
-# link : lien symbolique (défaut) ; copy : copie synchronisée (repli Windows, voir étape 0.2)
+# link : lien symbolique ; junction : jonction NTFS (Windows) ; copy : copie (dernier recours). Voir ADR-013.
+ifneq (,$(findstring MINGW,$(shell uname -s))$(findstring MSYS,$(shell uname -s)))
+LINK_MODE      ?= junction
+else
 LINK_MODE      ?= link
+endif
 COMPONENT      ?=
 SCENARIO       ?=
 SIZE           ?= small
+GRADLE_FLAGS   ?=
+# Modules Fineract NKULKAP : chaque core/custom-nkulkap/<domaine>/<module>/build.gradle -> :custom:nkulkap:<domaine>:<module>
+NKULKAP_MODULES := $(subst /,:,$(patsubst $(CUSTOM_SRC)/%/build.gradle,:custom:nkulkap:%,$(wildcard $(CUSTOM_SRC)/*/*/build.gradle)))
 
 .PHONY: help bootstrap build test e2e up down logs seed fixtures
 
@@ -21,19 +28,27 @@ help: ## Liste les cibles disponibles
 	@grep -E '^[a-z0-9-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
 
 bootstrap: ## Initialise les sous-modules et relie les modules custom à Fineract
-	git submodule update --init --recursive
+	git -c http.version=HTTP/1.1 -c core.longpaths=true submodule update --init --recursive
 	@if [ ! -d "$(FINERACT_DIR)/custom" ]; then echo "Sous-module $(FINERACT_DIR) absent : voir docs/STATUS.md, étape 0.2." >&2; exit 1; fi
+	@# Fineract attend des fins de ligne LF : sans ceci, Git pour Windows extrait en CRLF et le build réécrit les sources.
+	@if [ "$$(git -C $(FINERACT_DIR) config core.autocrlf)" != "false" ]; then \
+		git -C $(FINERACT_DIR) config core.autocrlf false && git -C $(FINERACT_DIR) config core.eol lf && git -C $(FINERACT_DIR) config core.longpaths true && \
+		git -C $(FINERACT_DIR) rm -rq --cached . && git -C $(FINERACT_DIR) reset -q --hard && echo "Sous-module $(FINERACT_DIR) réextrait en LF"; fi
 	@if [ "$(LINK_MODE)" = "copy" ]; then \
 		rm -rf "$(CUSTOM_LINK)" && mkdir -p "$(CUSTOM_LINK)" && cp -R "$(CUSTOM_SRC)/." "$(CUSTOM_LINK)/" && echo "Copie synchronisée : $(CUSTOM_LINK)"; \
-	elif [ -L "$(CUSTOM_LINK)" ]; then echo "Lien déjà présent : $(CUSTOM_LINK)"; \
-	else MSYS=winsymlinks:nativestrict ln -s ../../custom-nkulkap "$(CUSTOM_LINK)" && echo "Lien créé : $(CUSTOM_LINK) -> ../../custom-nkulkap"; fi
+	elif [ -e "$(CUSTOM_LINK)" ]; then echo "Lien déjà présent : $(CUSTOM_LINK)"; \
+	elif [ "$(LINK_MODE)" = "junction" ]; then \
+		cmd //c "mklink /J $$(cygpath -w "$(CUSTOM_LINK)") $$(cygpath -w "$(CUSTOM_SRC)")" >/dev/null && echo "Jonction créée : $(CUSTOM_LINK) -> $(CUSTOM_SRC)"; \
+	else ln -s ../../custom-nkulkap "$(CUSTOM_LINK)" && echo "Lien créé : $(CUSTOM_LINK) -> ../../custom-nkulkap"; fi
+	@EXCL="$$(git -C $(FINERACT_DIR) rev-parse --path-format=absolute --git-path info/exclude)"; \
+		grep -qx '/custom/nkulkap' "$$EXCL" 2>/dev/null || echo '/custom/nkulkap' >> "$$EXCL"
 
 build: ## Compile les modules Fineract NKULKAP
-	cd $(FINERACT_DIR) && ./gradlew $$(./gradlew -q projects | grep -o ':custom:nkulkap:[a-z:-]*' | sed 's/$$/:build/' | tr '\n' ' ')
+	cd $(FINERACT_DIR) && ./gradlew $(GRADLE_FLAGS) $(addsuffix :build,$(NKULKAP_MODULES))
 
 test: ## Lance les tests d'un composant : make test COMPONENT=<core|sync|edge|pay|rules|sentinel|field|web>
 	@case "$(COMPONENT)" in \
-		core) cd $(FINERACT_DIR) && ./gradlew $$(./gradlew -q projects | grep -o ':custom:nkulkap:[a-z:-]*' | sed 's/$$/:test/' | tr '\n' ' ') ;; \
+		core) cd $(FINERACT_DIR) && ./gradlew $(GRADLE_FLAGS) $(addsuffix :test,$(NKULKAP_MODULES)) ;; \
 		sync|edge|pay|rules|sentinel|field|web) echo "COMPONENT=$(COMPONENT) : pas encore créé (voir docs/STATUS.md)." >&2; exit 1 ;; \
 		*) echo "Préciser COMPONENT=<core|sync|edge|pay|rules|sentinel|field|web>." >&2; exit 2 ;; \
 	esac

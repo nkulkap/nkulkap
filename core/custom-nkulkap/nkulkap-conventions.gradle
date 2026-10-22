@@ -1,0 +1,39 @@
+// Conventions communes aux modules Fineract NKULKAP, appliquées par chaque build.gradle :
+//     apply from: "${rootDir}/custom/nkulkap/nkulkap-conventions.gradle"
+// Elles remplacent, pour nos seuls modules, des réglages de Fineract qui ne conviennent pas à du code propriétaire (ADR-015).
+
+def nkulkapHeader = '''/*
+ * Copyright (c) $YEAR Circaura Sarl. Tous droits réservés.
+ * Logiciel propriétaire NKULKAP : voir le fichier LICENSE à la racine du dépôt.
+ */
+'''
+
+// L'audit Apache RAT exige l'en-tête de licence de la fondation Apache, qui ne s'applique pas au code NKULKAP.
+tasks.named('rat') {
+    enabled = false
+}
+
+spotless {
+    // Java : palantir-java-format, distribué par Maven Central (aucune dépendance à download.eclipse.org),
+    // et en-tête propriétaire au lieu de l'en-tête Apache imposé par Fineract.
+    java {
+        clearSteps()
+        importOrder()
+        removeUnusedImports()
+        palantirJavaFormat('2.102.0')
+        licenseHeader(nkulkapHeader)
+    }
+    // Fichiers Gradle : règles d'espacement de Fineract, sans le formateur Eclipse (greclipse).
+    groovyGradle {
+        clearSteps()
+        leadingTabsToSpaces(4)
+        endWithNewline()
+        trimTrailingWhitespace()
+    }
+    // Fineract ajoute l'en-tête Apache aux XML, .properties, .vm et .jsp : retiré pour nos modules.
+    ['licenseXml', 'licenseProperties', 'licenseVelocity', 'licenseJsp'].each { name ->
+        format(name) {
+            clearSteps()
+        }
+    }
+}

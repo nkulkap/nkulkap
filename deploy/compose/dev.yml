@@ -1,0 +1,170 @@
+# Pile de développement local NKULKAP. Valeurs FICTIVES, jamais en production.
+# Poste cible : Docker limité à 5 Go de RAM, une seule instance de Fineract.
+name: nkulkap-dev
+
+services:
+  # Base PostgreSQL de Fineract (tenants + tenant par défaut).
+  db:
+    image: postgres:18.3
+    restart: unless-stopped
+    env_file: env/postgresql.env
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ../../core/fineract/config/docker/postgresql/docker-entrypoint-initdb.d/01-init.sh:/docker-entrypoint-initdb.d/01-init.sh:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "postgres", "-U", "root"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "5432:5432"
+    mem_limit: 512m
+
+  # Courtier Kafka monoligne en mode KRaft (événements externes et tâches distantes).
+  kafka:
+    image: apache/kafka:4.3.2
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: "0"
+      KAFKA_PROCESS_ROLES: controller,broker
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 0@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_BROKER_ID: "0"
+      KAFKA_HEAP_OPTS: -Xmx512m -Xms256m
+    volumes:
+      - kafkadata:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      start_period: 30s
+      retries: 12
+    ports:
+      - "9092:9092"
+    mem_limit: 768m
+
+  # Fournisseur d'identité Keycloak en mode développement.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.1
+    restart: unless-stopped
+    command: start-dev
+    environment:
+      KC_HEALTH_ENABLED: "true"
+      # Compte administrateur FICTIF, développement local uniquement.
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      JAVA_OPTS_KC_HEAP: -XX:MaxRAMPercentage=70
+    healthcheck:
+      # Pas de curl dans l'image : requête HTTP via /dev/tcp sur le port de gestion 9000.
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && grep -q UP <&3"]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 12
+    ports:
+      - "8180:8080"
+    mem_limit: 768m
+
+  # Instance unique de Fineract (gestionnaire et travailleur de tâches réunis).
+  fineract:
+    image: ${FINERACT_IMAGE:-fineract-custom:latest}
+    restart: unless-stopped
+    user: "${FINERACT_USER:-1000}:${FINERACT_GROUP:-1000}"
+    env_file: env/fineract.env
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    tmpfs:
+      - /tmp:rw,nosuid,size=256m
+    volumes:
+      - ../../core/fineract/config/docker/logback/logback-override.xml:/app/logback-override.xml:ro
+    healthcheck:
+      test: ["CMD", "sh", "-c", "nc -z localhost 8443"]
+      interval: 10s
+      timeout: 3s
+      start_period: 120s
+      retries: 30
+    ports:
+      - "8443:8443"
+    mem_limit: 1800m
+
+  # Proxy de panne réseau pour les tests de résilience (latence, coupures).
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.13.0
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/toxiproxy-cli", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "8474:8474"
+      - "21000-21010:21000-21010"
+    mem_limit: 64m
+
+  # Collecte des métriques (profil obs), scrape Fineract en HTTPS.
+  prometheus:
+    profiles: [obs]
+    image: prom/prometheus:v3.15.1
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "9090:9090"
+
+  # Tableaux de bord (profil obs).
+  grafana:
+    image: grafana/grafana:13.2.4
+    profiles: [obs]
+    restart: unless-stopped
+    environment:
+      # Compte FICTIF, développement local uniquement.
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafanadata:/var/lib/grafana
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "3000:3000"
+
+  # Agrégation de journaux (profil obs).
+  loki:
+    image: grafana/loki:3.7.9
+    profiles: [obs]
+    restart: unless-stopped
+    volumes:
+      - lokidata:/loki
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3100/ready"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+    ports:
+      - "3100:3100"
+
+volumes:
+  pgdata:
+  kafkadata:
+  grafanadata:
+  lokidata:

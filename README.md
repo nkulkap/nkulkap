@@ -22,7 +22,7 @@ NKULKAP est un core banking pour les EMF et les banques du Cameroun, construit s
 
 ## Démarrer
 
-Prérequis : Git, GNU Make, JDK 21, Docker.
+Prérequis : Git, GNU Make, JDK 25 (exigé par Fineract `develop`), Docker.
 
 ```sh
 make help       # liste des cibles
@@ -35,3 +35,7 @@ make up         # lance l'environnement local
 - [Avancement](docs/STATUS.md)
 - [Spécifications](docs/specs/README.md)
 - [Décisions d'architecture (ADR)](docs/adr/README.md)
+
+## Licence
+
+Logiciel propriétaire, © 2026 Circaura Sarl, tous droits réservés : voir [LICENSE](LICENSE). Les composants tiers (Apache Fineract, applications openMF) restent sous leurs propres licences : voir [NOTICE](NOTICE).

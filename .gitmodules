@@ -1,0 +1,4 @@
+[submodule "core/fineract"]
+	path = core/fineract
+	url = https://github.com/nkulkap/nkulkap-fineract.git
+	branch = nkulkap/main

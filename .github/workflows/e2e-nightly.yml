@@ -1,0 +1,24 @@
+# Scénarios de bout en bout, chaque nuit. Remplacera l'écho ci-dessous par make e2e SCENARIO=... (phase 12).
+name: e2e-nightly
+
+on:
+  schedule:
+    # 01:00 UTC = 02:00 à Douala (UTC+1).
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+
+      - run: echo "::notice::Aucun scénario E2E pour l'instant (phase 12)"

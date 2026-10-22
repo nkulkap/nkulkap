@@ -16,3 +16,6 @@ Chaque ADR décrit un contexte, une décision et ses conséquences ; un nouvel A
 | ADR-010 | [Keycloak (OIDC) pour l'identité](0010-keycloak-oidc-identite.md) | Accepté |
 | ADR-011 | [Hébergement au Cameroun par défaut](0011-hebergement-cameroun-par-defaut.md) | Accepté |
 | ADR-012 | [Modèle de multi-location](0012-modele-multi-location.md) | Accepté |
+| ADR-013 | [Jonction NTFS pour relier les modules custom sous Windows](0013-jonction-ntfs-modules-custom-windows.md) | Accepté |
+| ADR-014 | [Intégration continue sur GitHub Actions, avec bascule prévue vers TeamCity](0014-ci-github-actions-bascule-teamcity.md) | Accepté |
+| ADR-015 | [Conventions Gradle propres aux modules NKULKAP : formatage et en-tête de licence](0015-conventions-gradle-modules-nkulkap.md) | Accepté |

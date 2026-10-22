@@ -1,0 +1,56 @@
+# Chaîne nkulkap-web (application web, Node) : appelle make test COMPONENT=web après préparation de l'outillage.
+# Logique de build dans le Makefile uniquement (ADR-014). Le composant n'existe pas encore : la chaîne s'ignore tant que apps/nkulkap-web/package.json est absent.
+name: ci-web
+
+on:
+  push:
+    paths:
+      - "apps/nkulkap-web"
+      - "apps/nkulkap-web/**"
+      - "Makefile"
+      - ".github/workflows/ci-web.yml"
+  pull_request:
+    paths:
+      - "apps/nkulkap-web"
+      - "apps/nkulkap-web/**"
+      - "Makefile"
+      - ".github/workflows/ci-web.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-web-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      # Garde-fou : le composant n'est pas encore créé tant que son manifeste est absent.
+      - id: present
+        run: |
+          if [ -f apps/nkulkap-web/package.json ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::web pas encore créé, chaîne ignorée"
+          fi
+
+      - uses: actions/setup-node@v7
+        if: steps.present.outputs.ok == 'true'
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/nkulkap-web/package-lock.json
+
+      - name: Tester le composant
+        if: steps.present.outputs.ok == 'true'
+        run: make test COMPONENT=web
