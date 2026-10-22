@@ -18,6 +18,11 @@ endif
 COMPONENT      ?=
 SCENARIO       ?=
 SIZE           ?= small
+# SKIP_SPOTLESS=1 saute le formatage spotless (panne de download.eclipse.org, voir docs/STATUS.md).
+SKIP_SPOTLESS  ?=
+GRADLE_FLAGS   ?= $(if $(SKIP_SPOTLESS),-x spotlessCheck -x spotlessGroovyGradle)
+# Modules Fineract NKULKAP : chaque core/custom-nkulkap/<domaine>/<module>/build.gradle -> :custom:nkulkap:<domaine>:<module>
+NKULKAP_MODULES := $(subst /,:,$(patsubst $(CUSTOM_SRC)/%/build.gradle,:custom:nkulkap:%,$(wildcard $(CUSTOM_SRC)/*/*/build.gradle)))
 
 .PHONY: help bootstrap build test e2e up down logs seed fixtures
 
@@ -41,11 +46,11 @@ bootstrap: ## Initialise les sous-modules et relie les modules custom à Finerac
 		grep -qx '/custom/nkulkap' "$$EXCL" 2>/dev/null || echo '/custom/nkulkap' >> "$$EXCL"
 
 build: ## Compile les modules Fineract NKULKAP
-	cd $(FINERACT_DIR) && ./gradlew $$(./gradlew -q projects | grep -o ':custom:nkulkap:[a-z:-]*' | sed 's/$$/:build/' | tr '\n' ' ')
+	cd $(FINERACT_DIR) && ./gradlew $(GRADLE_FLAGS) $(addsuffix :build,$(NKULKAP_MODULES))
 
 test: ## Lance les tests d'un composant : make test COMPONENT=<core|sync|edge|pay|rules|sentinel|field|web>
 	@case "$(COMPONENT)" in \
-		core) cd $(FINERACT_DIR) && ./gradlew $$(./gradlew -q projects | grep -o ':custom:nkulkap:[a-z:-]*' | sed 's/$$/:test/' | tr '\n' ' ') ;; \
+		core) cd $(FINERACT_DIR) && ./gradlew $(GRADLE_FLAGS) $(addsuffix :test,$(NKULKAP_MODULES)) ;; \
 		sync|edge|pay|rules|sentinel|field|web) echo "COMPONENT=$(COMPONENT) : pas encore créé (voir docs/STATUS.md)." >&2; exit 1 ;; \
 		*) echo "Préciser COMPONENT=<core|sync|edge|pay|rules|sentinel|field|web>." >&2; exit 2 ;; \
 	esac

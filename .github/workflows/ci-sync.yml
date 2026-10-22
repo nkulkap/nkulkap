@@ -1,0 +1,53 @@
+# Chaîne nkulkap-sync (Rust) : appelle make test COMPONENT=sync après préparation de l'outillage.
+# Logique de build dans le Makefile uniquement (ADR-014). Le composant n'existe pas encore : la chaîne s'ignore tant que services/nkulkap-sync/Cargo.toml est absent.
+name: ci-sync
+
+on:
+  push:
+    paths:
+      - "services/nkulkap-sync/**"
+      - "Makefile"
+      - ".github/workflows/ci-sync.yml"
+  pull_request:
+    paths:
+      - "services/nkulkap-sync/**"
+      - "Makefile"
+      - ".github/workflows/ci-sync.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-sync-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      # Garde-fou : le composant n'est pas encore créé tant que son manifeste est absent.
+      - id: present
+        run: |
+          if [ -f services/nkulkap-sync/Cargo.toml ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::sync pas encore créé, chaîne ignorée"
+          fi
+
+      - uses: dtolnay/rust-toolchain@stable
+        if: steps.present.outputs.ok == 'true'
+
+      # Cache des dépendances et de la compilation Cargo.
+      - uses: Swatinem/rust-cache@v2
+        if: steps.present.outputs.ok == 'true'
+        with:
+          workspaces: services/nkulkap-sync
+
+      - name: Tester le composant
+        if: steps.present.outputs.ok == 'true'
+        run: make test COMPONENT=sync

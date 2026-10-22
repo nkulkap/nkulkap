@@ -1,0 +1,54 @@
+# Chaîne nkulkap-sentinel (Scala, sbt) : appelle make test COMPONENT=sentinel après préparation de l'outillage.
+# Logique de build dans le Makefile uniquement (ADR-014). Le composant n'existe pas encore : la chaîne s'ignore tant que services/nkulkap-sentinel/build.sbt est absent.
+name: ci-sentinel
+
+on:
+  push:
+    paths:
+      - "services/nkulkap-sentinel/**"
+      - "Makefile"
+      - ".github/workflows/ci-sentinel.yml"
+  pull_request:
+    paths:
+      - "services/nkulkap-sentinel/**"
+      - "Makefile"
+      - ".github/workflows/ci-sentinel.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-sentinel-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      # Garde-fou : le composant n'est pas encore créé tant que son manifeste est absent.
+      - id: present
+        run: |
+          if [ -f services/nkulkap-sentinel/build.sbt ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::sentinel pas encore créé, chaîne ignorée"
+          fi
+
+      - uses: actions/setup-java@v6
+        if: steps.present.outputs.ok == 'true'
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: sbt
+
+      - uses: sbt/setup-sbt@v1
+        if: steps.present.outputs.ok == 'true'
+
+      - name: Tester le composant
+        if: steps.present.outputs.ok == 'true'
+        run: make test COMPONENT=sentinel

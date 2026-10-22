@@ -1,0 +1,52 @@
+# Chaîne nkulkap-rules (Go) : appelle make test COMPONENT=rules après préparation de l'outillage.
+# Logique de build dans le Makefile uniquement (ADR-014). Le composant n'existe pas encore : la chaîne s'ignore tant que services/nkulkap-rules/go.mod est absent.
+name: ci-rules
+
+on:
+  push:
+    paths:
+      - "services/nkulkap-rules/**"
+      - "rules/**"
+      - "Makefile"
+      - ".github/workflows/ci-rules.yml"
+  pull_request:
+    paths:
+      - "services/nkulkap-rules/**"
+      - "rules/**"
+      - "Makefile"
+      - ".github/workflows/ci-rules.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-rules-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      # Garde-fou : le composant n'est pas encore créé tant que son manifeste est absent.
+      - id: present
+        run: |
+          if [ -f services/nkulkap-rules/go.mod ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::rules pas encore créé, chaîne ignorée"
+          fi
+
+      - uses: actions/setup-go@v7
+        if: steps.present.outputs.ok == 'true'
+        with:
+          go-version-file: services/nkulkap-rules/go.mod
+          cache-dependency-path: services/nkulkap-rules/go.sum
+
+      - name: Tester le composant
+        if: steps.present.outputs.ok == 'true'
+        run: make test COMPONENT=rules

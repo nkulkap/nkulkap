@@ -1,0 +1,53 @@
+# Chaîne nkulkap-edge (Rust) : appelle make test COMPONENT=edge après préparation de l'outillage.
+# Logique de build dans le Makefile uniquement (ADR-014). Le composant n'existe pas encore : la chaîne s'ignore tant que services/nkulkap-edge/Cargo.toml est absent.
+name: ci-edge
+
+on:
+  push:
+    paths:
+      - "services/nkulkap-edge/**"
+      - "Makefile"
+      - ".github/workflows/ci-edge.yml"
+  pull_request:
+    paths:
+      - "services/nkulkap-edge/**"
+      - "Makefile"
+      - ".github/workflows/ci-edge.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-edge-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      # Garde-fou : le composant n'est pas encore créé tant que son manifeste est absent.
+      - id: present
+        run: |
+          if [ -f services/nkulkap-edge/Cargo.toml ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::edge pas encore créé, chaîne ignorée"
+          fi
+
+      - uses: dtolnay/rust-toolchain@stable
+        if: steps.present.outputs.ok == 'true'
+
+      # Cache des dépendances et de la compilation Cargo.
+      - uses: Swatinem/rust-cache@v2
+        if: steps.present.outputs.ok == 'true'
+        with:
+          workspaces: services/nkulkap-edge
+
+      - name: Tester le composant
+        if: steps.present.outputs.ok == 'true'
+        run: make test COMPONENT=edge
