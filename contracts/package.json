@@ -1,0 +1,19 @@
+{
+  "name": "nkulkap-contracts",
+  "private": true,
+  "description": "Validation des contrats NKULKAP : OpenAPI (Redocly) et schémas d'événements Avro.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "lint": "npm run lint:openapi && npm run lint:events",
+    "lint:openapi": "redocly lint",
+    "lint:events": "node scripts/validate-events.mjs"
+  },
+  "devDependencies": {
+    "@redocly/cli": "2.60.0",
+    "avsc": "5.7.9"
+  }
+}

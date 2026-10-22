@@ -1,0 +1,22 @@
+{
+  "type": "record",
+  "name": "TourneeStateChangedV1",
+  "namespace": "cm.nkulkap.events.tournee.v1",
+  "doc": "tournee.<état> : changement d'état d'une tournée de collecte (machine à états D.3, FR-L4-03, FR-L4-05). Le type d'enveloppe vaut tournee.soumise, tournee.rapprochee ou tournee.ecart.",
+  "fields": [
+    {"name": "tourneeId", "doc": "Identifiant de la tournée (nkulkap_tournee.id).", "type": "long"},
+    {"name": "collecteurId", "doc": "Collecteur (nkulkap_collecteur.id).", "type": "long"},
+    {"name": "staffId", "doc": "Employé Fineract du collecteur.", "type": "long"},
+    {"name": "officeId", "doc": "Agence Fineract.", "type": "long"},
+    {"name": "dateTournee", "doc": "Date de la tournée, format AAAA-MM-JJ.", "type": "string"},
+    {"name": "previousState", "doc": "État précédent.", "type": ["null", {"type": "enum", "name": "TourneeStateV1", "symbols": ["OUVERTE", "SOUMISE", "EN_ECART", "RAPPROCHEE"]}], "default": null},
+    {"name": "state", "doc": "Nouvel état.", "type": "cm.nkulkap.events.tournee.v1.TourneeStateV1"},
+    {"name": "operationCount", "doc": "Nombre de collectes de la tournée.", "type": "int"},
+    {"name": "totalComptabilise", "doc": "Total des collectes comptabilisées, en unités entières.", "type": "long"},
+    {"name": "totalDeclare", "doc": "Espèces comptées par le caissier, en unités entières ; null avant rapprochement.", "type": ["null", "long"], "default": null},
+    {"name": "ecart", "doc": "totalDeclare moins totalComptabilise, en unités entières ; null avant rapprochement.", "type": ["null", "long"], "default": null},
+    {"name": "currency", "doc": "Code ISO 4217 (XAF).", "type": "string"},
+    {"name": "actorUserId", "doc": "Utilisateur à l'origine du changement (collecteur, caissier, approbateur).", "type": "string"},
+    {"name": "changedAt", "doc": "Instant du changement d'état, UTC, ISO 8601.", "type": "string"}
+  ]
+}

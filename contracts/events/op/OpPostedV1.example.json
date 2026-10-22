@@ -1,0 +1,26 @@
+{
+  "opId": "0192f1e2-1111-7aaa-8bbb-000000000001",
+  "opType": "COLLECTE_DEPOT",
+  "deviceId": "dev_8Hk2",
+  "userId": "FICTIF-collecteur-42",
+  "officeId": 2,
+  "account": {
+    "kind": "SAVINGS",
+    "id": "55231"
+  },
+  "amount": 2000,
+  "currency": "XAF",
+  "fineractTxnId": 991245,
+  "valueDate": "2026-10-21",
+  "createdAtDevice": "2026-10-21T09:12:44+01:00",
+  "receivedAt": "2026-10-21T16:42:11Z",
+  "postedAt": "2026-10-21T16:42:13Z",
+  "hlc": "1761065530123:0004:dev_8Hk2",
+  "gps": {
+    "lat": 3.8667,
+    "lon": 11.5167,
+    "accM": 25
+  },
+  "receiptCode": "K7Q2MZ",
+  "clientId": 4410
+}

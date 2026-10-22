@@ -1,0 +1,505 @@
+# Copyright (c) 2026 Circaura Sarl. Tous droits réservés.
+# Contrat du protocole de synchronisation v1 (ADR-008, annexe C, FR-L5-01 à FR-L5-09).
+openapi: 3.1.0
+info:
+  title: NKULKAP Sync API
+  version: 1.0.0
+  summary: Synchronisation des appareils hors-ligne (téléphones nkulkap-field, nœuds nkulkap-edge) avec nkulkap-sync.
+  description: |
+    Corps JSON compressé en gzip (`Content-Encoding: gzip`) dans les deux sens.
+    Montants en unités entières de la devise (XAF), jamais en décimal.
+    `op_id` est un UUIDv7 créé sur l'appareil à la saisie ; il sert d'`Idempotency-Key` et d'`externalId`
+    côté Fineract (ADR-016). Un même `op_id` renvoyé produit le statut `DUPLICATE`, jamais une seconde écriture.
+  license:
+    name: Propriétaire, Circaura Sarl
+    identifier: LicenseRef-Circaura-Proprietary
+servers:
+  - url: https://sync.nkulkap.example
+    description: Exemple FICTIF
+security:
+  - keycloak: []
+tags:
+  - name: devices
+    description: Enregistrement et révocation des appareils (FR-L5-01).
+  - name: sync
+    description: Envoi et réception des lots (FR-L5-02, FR-L5-05).
+paths:
+  /v1/devices:
+    post:
+      tags: [devices]
+      operationId: registerDevice
+      summary: Enregistrer la clé publique Ed25519 d'un appareil pour l'utilisateur authentifié.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceRegistration'
+      responses:
+        '201':
+          description: Appareil enregistré.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '409':
+          description: Clé publique déjà enregistrée pour un autre appareil.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /v1/devices/{deviceId}/revocation:
+    post:
+      tags: [devices]
+      operationId: revokeDevice
+      summary: Révoquer un appareil (perte, vol) ; ses lots suivants sont refusés et ses données locales effacées à la reconnexion.
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  enum: [LOST, STOLEN, REPLACED, STAFF_LEFT, OTHER]
+                comment:
+                  type: string
+                  maxLength: 500
+      responses:
+        '204':
+          description: Appareil révoqué.
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+  /v1/sync/push:
+    post:
+      tags: [sync]
+      operationId: pushBatch
+      summary: Envoyer un lot signé d'opérations.
+      description: |
+        La réponse porte un résultat **par opération**. `ACCEPTED` signifie « stocké durablement dans la boîte
+        de réception », pas « comptabilisé » : le statut final arrive par `GET /v1/sync/pull`.
+        Un rejet technique de tout le lot (signature, appareil révoqué, dérive d'horloge) est rendu dans
+        `results` avec le même code pour chaque opération.
+      parameters:
+        - $ref: '#/components/parameters/DeviceHeader'
+        - $ref: '#/components/parameters/SignatureHeader'
+        - $ref: '#/components/parameters/ContentEncoding'
+        - $ref: '#/components/parameters/TraceParent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PushBatch'
+      responses:
+        '202':
+          description: Lot reçu ; chaque opération a son résultat.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushResult'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '413':
+          description: Lot trop volumineux ; le découper.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /v1/sync/pull:
+    get:
+      tags: [sync]
+      operationId: pullChanges
+      summary: Recevoir les statuts d'opérations et les changements du portefeuille depuis un curseur.
+      parameters:
+        - $ref: '#/components/parameters/DeviceHeader'
+        - $ref: '#/components/parameters/TraceParent'
+        - name: cursor
+          in: query
+          description: Curseur opaque renvoyé par l'appel précédent ; absent au premier appel (instantané complet).
+          schema:
+            type: string
+            maxLength: 512
+        - name: max_bytes
+          in: query
+          description: Taille maximale de la page compressée.
+          schema:
+            type: integer
+            minimum: 10000
+            maximum: 200000
+            default: 200000
+      responses:
+        '200':
+          description: Page de changements.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PullPage'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '410':
+          description: Curseur expiré ; recommencer sans curseur.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+components:
+  securitySchemes:
+    keycloak:
+      type: oauth2
+      description: Jeton d'accès Keycloak (royaume nkulkap).
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.nkulkap.example/realms/nkulkap/protocol/openid-connect/auth
+          tokenUrl: https://auth.nkulkap.example/realms/nkulkap/protocol/openid-connect/token
+          scopes: {}
+  parameters:
+    DeviceId:
+      name: deviceId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/DeviceId'
+    DeviceHeader:
+      name: X-Nkulkap-Device
+      in: header
+      required: true
+      schema:
+        $ref: '#/components/schemas/DeviceId'
+    SignatureHeader:
+      name: X-Nkulkap-Signature
+      in: header
+      required: true
+      description: Signature Ed25519, en base64, du corps **non compressé**.
+      schema:
+        type: string
+        contentEncoding: base64
+        maxLength: 128
+    ContentEncoding:
+      name: Content-Encoding
+      in: header
+      required: true
+      schema:
+        type: string
+        enum: [gzip]
+    TraceParent:
+      name: traceparent
+      in: header
+      required: false
+      description: Contexte de trace W3C, propagé jusqu'à Fineract.
+      schema:
+        type: string
+        pattern: '^[0-9a-f]{2}-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$'
+  responses:
+    Problem:
+      description: Erreur (RFC 9457).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+    DeviceId:
+      type: string
+      pattern: '^dev_[A-Za-z0-9]{4,32}$'
+      examples: [dev_8Hk2]
+    Amount:
+      description: Montant en unités entières de la devise.
+      type: integer
+      format: int64
+      minimum: 1
+    Currency:
+      type: string
+      enum: [XAF]
+    DeviceRegistration:
+      type: object
+      required: [public_key, platform, label]
+      properties:
+        public_key:
+          description: Clé publique Ed25519 (32 octets), en base64.
+          type: string
+          contentEncoding: base64
+          minLength: 43
+          maxLength: 44
+        platform:
+          type: string
+          enum: [ANDROID, EDGE]
+        label:
+          type: string
+          maxLength: 100
+    Device:
+      type: object
+      required: [device_id, user_id, office_id, status, registered_at]
+      properties:
+        device_id:
+          $ref: '#/components/schemas/DeviceId'
+        user_id:
+          type: string
+        office_id:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum: [ACTIVE, REVOKED]
+        registered_at:
+          type: string
+          format: date-time
+    PushBatch:
+      type: object
+      required: [batch_id, device_id, tenant, sent_at_device, ops]
+      properties:
+        batch_id:
+          $ref: '#/components/schemas/Uuid'
+        device_id:
+          $ref: '#/components/schemas/DeviceId'
+        tenant:
+          type: string
+          maxLength: 64
+        sent_at_device:
+          type: string
+          format: date-time
+        ops:
+          type: array
+          minItems: 1
+          maxItems: 500
+          items:
+            $ref: '#/components/schemas/Operation'
+    Operation:
+      type: object
+      required: [op_id, seq, hlc, type, account, amount, currency, created_at_device]
+      properties:
+        op_id:
+          $ref: '#/components/schemas/Uuid'
+        seq:
+          description: Compteur monotone par appareil ; un trou produit `SEQ_GAP` sans refuser le lot.
+          type: integer
+          format: int64
+          minimum: 1
+        hlc:
+          description: Horloge logique hybride `<millis>:<compteur>:<device_id>`.
+          type: string
+          pattern: '^[0-9]{13}:[0-9]{4}:dev_[A-Za-z0-9]{4,32}$'
+        type:
+          $ref: '#/components/schemas/OperationType'
+        account:
+          $ref: '#/components/schemas/AccountRef'
+        amount:
+          $ref: '#/components/schemas/Amount'
+        currency:
+          $ref: '#/components/schemas/Currency'
+        created_at_device:
+          type: string
+          format: date-time
+        gps:
+          $ref: '#/components/schemas/Gps'
+        data:
+          description: Données propres au type (ex. `carnet_id`, `tournee_date`, `code_recu` pour une collecte).
+          type: object
+          additionalProperties: true
+    OperationType:
+      type: string
+      enum: [COLLECTE_DEPOT, EPARGNE_DEPOT, EPARGNE_RETRAIT, PRET_REMBOURSEMENT, TONTINE_COTISATION, CLIENT_CREATION]
+    AccountRef:
+      type: object
+      required: [kind, id]
+      properties:
+        kind:
+          type: string
+          enum: [SAVINGS, LOAN, TONTINE, CLIENT_TEMP]
+        id:
+          description: Identifiant Fineract, ou identifiant temporaire d'appareil pour `CLIENT_TEMP`.
+          oneOf:
+            - type: integer
+              format: int64
+            - type: string
+              maxLength: 64
+    Gps:
+      type: object
+      required: [lat, lon]
+      properties:
+        lat:
+          type: number
+          minimum: -90
+          maximum: 90
+        lon:
+          type: number
+          minimum: -180
+          maximum: 180
+        acc_m:
+          type: integer
+          minimum: 0
+    PushResult:
+      type: object
+      required: [batch_id, server_time, results, clock_skew_ms]
+      properties:
+        batch_id:
+          $ref: '#/components/schemas/Uuid'
+        server_time:
+          type: string
+          format: date-time
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/OperationResult'
+        clock_skew_ms:
+          description: Écart mesuré entre l'horloge de l'appareil et celle du serveur (avertissement au-delà de 15 min).
+          type: integer
+          format: int64
+        warnings:
+          type: array
+          items:
+            type: string
+            enum: [SEQ_GAP, CLOCK_SKEW]
+    OperationResult:
+      type: object
+      required: [op_id, status]
+      properties:
+        op_id:
+          $ref: '#/components/schemas/Uuid'
+        status:
+          type: string
+          enum: [ACCEPTED, DUPLICATE, REJECTED]
+        code:
+          description: Présent si `status` vaut `REJECTED`.
+          $ref: '#/components/schemas/TechnicalRejectCode'
+        existing_status:
+          description: 'Présent si `status` vaut `DUPLICATE` : statut déjà connu de l''opération.'
+          $ref: '#/components/schemas/OpStatusValue'
+    TechnicalRejectCode:
+      type: string
+      enum: [BAD_SIGNATURE, DEVICE_REVOKED, SCHEMA_INVALID, CLOCK_SKEW_TOO_LARGE]
+    BusinessRejectCode:
+      type: string
+      enum:
+        - ACCOUNT_CLOSED
+        - ACCOUNT_BLOCKED
+        - CARNET_INACTIVE
+        - INSUFFICIENT_FUNDS
+        - LIMIT_EXCEEDED
+        - LOAN_CLOSED
+        - OVERPAYMENT
+        - CYCLE_CLOSED
+        - NOT_MEMBER
+        - DUPLICATE_IDENTITY
+        - KYC_INCOMPLETE
+    OpStatusValue:
+      description: Cycle de vie d'une opération (annexe D.2).
+      type: string
+      enum: [ACCEPTED, POSTING, POSTED, REJECTED_NEEDS_REVIEW, RESOLVED]
+    OpStatus:
+      type: object
+      required: [op_id, status]
+      properties:
+        op_id:
+          $ref: '#/components/schemas/Uuid'
+        status:
+          $ref: '#/components/schemas/OpStatusValue'
+        fineract_txn_id:
+          type: integer
+          format: int64
+        posted_at:
+          type: string
+          format: date-time
+        reject_code:
+          $ref: '#/components/schemas/BusinessRejectCode'
+        server_id:
+          description: 'Pour `CLIENT_CREATION` : identifiant Fineract qui remplace l''identifiant temporaire.'
+          type: integer
+          format: int64
+    Change:
+      type: object
+      required: [id, op]
+      properties:
+        id:
+          type: integer
+          format: int64
+        op:
+          type: string
+          enum: [UPSERT, DELETE]
+        data:
+          type: object
+          additionalProperties: true
+    PullPage:
+      type: object
+      required: [next_cursor, has_more, op_statuses, changes]
+      properties:
+        next_cursor:
+          type: string
+          maxLength: 512
+        has_more:
+          type: boolean
+        op_statuses:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpStatus'
+        changes:
+          type: object
+          properties:
+            clients:
+              type: array
+              items:
+                $ref: '#/components/schemas/Change'
+            savings:
+              type: array
+              items:
+                $ref: '#/components/schemas/Change'
+            loans:
+              type: array
+              items:
+                $ref: '#/components/schemas/Change'
+            carnets:
+              type: array
+              items:
+                $ref: '#/components/schemas/Change'
+            config:
+              $ref: '#/components/schemas/DeviceConfig'
+    DeviceConfig:
+      type: object
+      properties:
+        limits:
+          type: object
+          required: [offline_per_op, offline_per_day]
+          properties:
+            offline_per_op:
+              $ref: '#/components/schemas/Amount'
+            offline_per_day:
+              $ref: '#/components/schemas/Amount'
+        cutoff_hour:
+          description: Heure limite de rattachement à la veille (FR-L5-08).
+          type: integer
+          minimum: 0
+          maximum: 23
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          description: Code d'erreur stable NKULKAP, traduit par le client (clés i18n fr et en).
+          type: string

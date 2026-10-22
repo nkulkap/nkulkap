@@ -10,7 +10,7 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 |---|---|---|---|
 | 0 | Préparer : dépôts, outillage, pile de développement | Terminée et fusionnée le 2026-10-22 | Sonnet pour squelette, ADR, Compose, CI ; Opus pour Makefile, choix du fork, relecture |
 | 1 | Comprendre : explorations et vérifications d'hypothèses | En cours | Opus pilote et conclut ; Haiku (`fineract-explorer`) pour les recherches |
-| 2 | Socle commun : contrats, données de test, réseau dégradé, identité | À faire | Opus pour contrats et identité (sécurité) ; Sonnet pour fixtures FICTIVES, profils Toxiproxy, Keycloak en suivant le modèle |
+| 2 | Socle commun : contrats, données de test, réseau dégradé, identité | En cours | Opus pour contrats et identité (sécurité) ; Sonnet pour fixtures FICTIVES, profils Toxiproxy, Keycloak en suivant le modèle |
 | 3 | L1 Plan comptable et hors-bilan | À faire | Opus pour les règles comptables et le hors-bilan ; Sonnet pour CRUD, ressources REST, migrations |
 | 4 | L2 TEG et usure | À faire | Opus pour le calcul du TEG et son premier test ; Sonnet (`nkulkap-tests`) pour les cas supplémentaires, `nkulkap-i18n` pour la fiche TEG |
 | 5 | L3 Numscript | À faire | Opus (répartitions Numscript) ; Sonnet pour l'adaptateur Go hors logique et les tests supplémentaires |
@@ -40,6 +40,7 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 - `~/.gradle/gradle.properties` ramène Gradle à `-Xmx3g`, 2 workers, sans parallélisme : le `-Xmx12g` de Fineract fait planter la JVM sur ce poste.
 - Le sous-module Fineract doit être extrait en LF (`core.autocrlf=false`) : en CRLF, le build réécrit les sources et échoue. `make bootstrap` le règle.
 - Ne pas compiler Fineract pendant que la pile Docker tourne (mémoire insuffisante pour les deux).
+- Node 18.14 seulement sur le poste : `make lint-contracts` exige Node ≥ 22.12 ; en local, lancé dans le conteneur `node:22.12.0-alpine`.
 - Go 1.27.0 installé par winget (`GoLang.Go`, `C:\Program Files\Go\bin`) le 2026-10-22 ; `go.mod` de `nkulkap-rules` exige Go ≥ 1.24.4 (minimum de Numscript).
 - Windows Defender : dossiers du projet et `~/.gradle` exclus de l'analyse en temps réel. Sans cela, la compilation de Fineract échoue par « Ressources système insuffisantes » (erreur 1450). La construction de l'image prend environ 11 min avec `-Dorg.gradle.workers.max=1` et `-Xmx2560m`.
 
@@ -69,6 +70,12 @@ Modèle conseillé : **Opus** conçoit, écrit la logique critique et relit ; **
 | 1.7 Numscript | Fait (2026-10-22) | `services/nkulkap-rules` (Go, Numscript v0.0.24) : `internal/engine` exécute une règle en calcul pur (magasin de soldes vide, montants entiers `int64`) ; commande `cmd/nkulkap-rules <règle.num> <entrée.json>`. Règles de l'annexe B dans `rules/collecte/frais_collecte.num` et `rules/momo/frais_retrait.num`. `make test COMPONENT=rules` (`go vet` + `go test ./...`) : vert ; sorties exactes de l'annexe B retrouvées (1 240 / 1 860 ; 162 / 252 / 586) et somme conservée. |
 
 Constats de 1.1 utiles à la suite : XAF doit être déclarée dans `/currencies` sinon les écritures manuelles sont refusées ; `GET /journalentries` ne filtre pas par `referenceNumber` ; `PUT /externalevents/configuration` avec un type inconnu renvoie 500.
+
+## Phase 2 — détail
+
+| Étape | Statut | Vérification |
+|---|---|---|
+| 2.1 Contrats | Fait (2026-10-22) | `contracts/sync-v1.openapi.yaml` (annexe C, D.2, FR-L5), `pay-v1.openapi.yaml` (D.1, FR-L6), `sentinel-v1.openapi.yaml` (FR-L8), en OpenAPI 3.1 ; événements Avro dans `contracts/events/` : enveloppe `EventEnvelopeV1` (calquée sur `MessageV1` de Fineract), `op.posted`, `op.rejected`, `payment.*`, `tournee.*`, chacun avec un exemple FICTIF. `make lint-contracts` (Redocly CLI 2.60.0, règles `recommended` renforcées ; `avsc` 5.7.9 : syntaxe, conventions, montants entiers, aller-retour des exemples) : vert ; CI `ci-contracts`. Génération de code reportée à la phase de chaque service (`contracts/README.md`). |
 
 ## À faire sur le poste puissant
 

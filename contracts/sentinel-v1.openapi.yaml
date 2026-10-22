@@ -1,0 +1,641 @@
+# Copyright (c) 2026 Circaura Sarl. Tous droits réservés.
+# Contrat de nkulkap-sentinel v1 : LAB-FT et fraude (FR-L8-01 à FR-L8-09).
+openapi: 3.1.0
+info:
+  title: NKULKAP Sentinel API
+  version: 1.0.0
+  summary: Alertes, dossiers LAB-FT, filtrage des listes de sanctions, paramètres des règles et rejeu.
+  description: |
+    Les alertes naissent des événements Fineract et NKULKAP consommés sur Kafka ; l'API sert la revue humaine.
+    Tout changement d'état d'un dossier est journalisé (audit). Une déclaration exige deux utilisateurs
+    distincts (principe des quatre yeux). Seuils et formats réglementaires : **[À VÉRIFIER]** (ANIF, CEMAC).
+    Montants en unités entières de la devise (XAF).
+  license:
+    name: Propriétaire, Circaura Sarl
+    identifier: LicenseRef-Circaura-Proprietary
+servers:
+  - url: https://sentinel.nkulkap.example
+    description: Exemple FICTIF
+security:
+  - keycloak: []
+tags:
+  - name: alerts
+    description: Alertes produites par les règles (FR-L8-03, FR-L8-05).
+  - name: cases
+    description: Dossiers et leur cycle de vie (FR-L8-06, FR-L8-08).
+  - name: screening
+    description: Filtrage des listes de sanctions et PPE (FR-L8-04, FR-L8-07).
+  - name: rules
+    description: Paramètres des règles par locataire et rejeu en mode ombre (FR-L8-02, FR-L8-09).
+paths:
+  /v1/alerts:
+    get:
+      tags: [alerts]
+      operationId: listAlerts
+      summary: Lister les alertes.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/AlertStatus'
+        - name: rule
+          in: query
+          schema:
+            $ref: '#/components/schemas/RuleId'
+        - name: client_id
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: shadow
+          in: query
+          description: Alertes du mode ombre (rejeu) au lieu des alertes réelles.
+          schema:
+            type: boolean
+            default: false
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Page d'alertes.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, has_more]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Alert'
+                  has_more:
+                    type: boolean
+                  next_cursor:
+                    type: string
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+  /v1/alerts/{alertId}:
+    get:
+      tags: [alerts]
+      operationId: getAlert
+      summary: Lire une alerte et les événements qui l'ont déclenchée.
+      parameters:
+        - $ref: '#/components/parameters/AlertId'
+      responses:
+        '200':
+          description: Alerte.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+  /v1/cases:
+    post:
+      tags: [cases]
+      operationId: openCase
+      summary: Ouvrir un dossier à partir d'une ou plusieurs alertes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [alert_ids]
+              properties:
+                alert_ids:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: string
+                    format: uuid
+                comment:
+                  type: string
+                  maxLength: 2000
+      responses:
+        '201':
+          description: Dossier ouvert à l'état `NOUVEAU`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Case'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+    get:
+      tags: [cases]
+      operationId: listCases
+      summary: Lister les dossiers.
+      parameters:
+        - name: state
+          in: query
+          schema:
+            $ref: '#/components/schemas/CaseState'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Page de dossiers.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, has_more]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Case'
+                  has_more:
+                    type: boolean
+                  next_cursor:
+                    type: string
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+  /v1/cases/{caseId}:
+    get:
+      tags: [cases]
+      operationId: getCase
+      summary: Lire un dossier et son journal.
+      parameters:
+        - $ref: '#/components/parameters/CaseId'
+      responses:
+        '200':
+          description: Dossier.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Case'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+  /v1/cases/{caseId}/transitions:
+    post:
+      tags: [cases]
+      operationId: transitionCase
+      summary: Faire avancer un dossier dans son cycle de vie.
+      description: |
+        Transitions permises : `NOUVEAU → EN_REVUE`, `EN_REVUE → CLASSE_SANS_SUITE`, `EN_REVUE → ESCALADE`,
+        `ESCALADE → DECLARE`. Le passage à `DECLARE` est refusé (`409`) si l'auteur est celui qui a escaladé
+        (quatre yeux). Toute transition est journalisée avec son auteur et son commentaire.
+      parameters:
+        - $ref: '#/components/parameters/CaseId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to, comment]
+              properties:
+                to:
+                  $ref: '#/components/schemas/CaseState'
+                comment:
+                  type: string
+                  minLength: 1
+                  maxLength: 2000
+                expected_version:
+                  description: Version lue du dossier (concurrence optimiste).
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Dossier mis à jour.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Case'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          description: Transition interdite, quatre yeux non respectés ou version périmée.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /v1/cases/{caseId}/declaration-draft:
+    get:
+      tags: [cases]
+      operationId: getDeclarationDraft
+      summary: Télécharger le brouillon de déclaration de soupçon (PDF structuré en attendant le format ANIF).
+      parameters:
+        - $ref: '#/components/parameters/CaseId'
+      responses:
+        '200':
+          description: Brouillon.
+          content:
+            application/pdf:
+              schema:
+                type: string
+                contentMediaType: application/pdf
+        '401':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+        '409':
+          description: Dossier pas encore escaladé.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /v1/screening/checks:
+    post:
+      tags: [screening]
+      operationId: screenPerson
+      summary: Filtrer une personne contre les listes de sanctions et PPE (correspondance approchée).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScreeningRequest'
+      responses:
+        '200':
+          description: Résultat du filtrage.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScreeningResult'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+  /v1/screening/matches/{matchId}/decision:
+    post:
+      tags: [screening]
+      operationId: decideMatch
+      summary: Confirmer ou écarter une correspondance ; une confirmation peut bloquer les débits du compte (FR-L8-07).
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision, comment]
+              properties:
+                decision:
+                  type: string
+                  enum: [CONFIRMED, FALSE_POSITIVE]
+                comment:
+                  type: string
+                  minLength: 1
+                  maxLength: 2000
+      responses:
+        '200':
+          description: Décision enregistrée.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScreeningMatch'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+  /v1/rules:
+    get:
+      tags: [rules]
+      operationId: listRules
+      summary: Lister les règles et leurs paramètres pour le locataire.
+      responses:
+        '200':
+          description: Règles.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RuleConfig'
+        '401':
+          $ref: '#/components/responses/Problem'
+  /v1/rules/{ruleId}:
+    put:
+      tags: [rules]
+      operationId: updateRule
+      summary: Modifier les paramètres d'une règle (seuils par locataire).
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RuleId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuleConfig'
+      responses:
+        '200':
+          description: Règle mise à jour.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleConfig'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+  /v1/replays:
+    post:
+      tags: [rules]
+      operationId: startReplay
+      summary: Rejouer l'historique d'événements en mode ombre, sans alerte réelle (FR-L8-09).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from]
+              properties:
+                from:
+                  description: Date de début du rejeu.
+                  type: string
+                  format: date-time
+                rules:
+                  description: Règles rejouées ; toutes si absent.
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/RuleId'
+                overrides:
+                  description: Paramètres à tester à la place des paramètres en vigueur.
+                  type: object
+                  additionalProperties: true
+      responses:
+        '202':
+          description: Rejeu lancé ; ses alertes portent `shadow = true`.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [replay_id]
+                properties:
+                  replay_id:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+components:
+  securitySchemes:
+    keycloak:
+      type: oauth2
+      description: Jeton d'accès Keycloak (royaume nkulkap) ; rôle de conformité requis.
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.nkulkap.example/realms/nkulkap/protocol/openid-connect/auth
+          tokenUrl: https://auth.nkulkap.example/realms/nkulkap/protocol/openid-connect/token
+          scopes: {}
+  parameters:
+    AlertId:
+      name: alertId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    CaseId:
+      name: caseId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+        maxLength: 512
+  responses:
+    Problem:
+      description: Erreur (RFC 9457).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    RuleId:
+      description: Règles v1 (FR-L8-03, FR-L8-05) et filtrage (FR-L8-04).
+      type: string
+      enum:
+        - CASH_THRESHOLD
+        - STRUCTURING
+        - VELOCITY
+        - RAPID_IN_OUT
+        - DORMANT_REACTIVATION
+        - MANY_THIRD_PARTY_DEPOSITORS
+        - LARGE_DEPOSIT_NEW_ACCOUNT
+        - COLLECTE_OUT_OF_ZONE
+        - COLLECTE_LATE_SYNC
+        - TOURNEE_REPEATED_GAPS
+        - HIGH_CANCELLATION_RATE
+        - COLLECTE_ODD_HOURS
+        - SANCTIONS_MATCH
+    AlertStatus:
+      type: string
+      enum: [OPEN, IN_CASE, DISMISSED]
+    Alert:
+      type: object
+      required: [alert_id, rule, status, score, created_at, shadow, events]
+      properties:
+        alert_id:
+          type: string
+          format: uuid
+        rule:
+          $ref: '#/components/schemas/RuleId'
+        status:
+          $ref: '#/components/schemas/AlertStatus'
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        client_id:
+          type: integer
+          format: int64
+        account_id:
+          type: integer
+          format: int64
+        amount:
+          description: Montant en cause, en unités entières de la devise.
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+        shadow:
+          type: boolean
+        events:
+          description: Identifiants des événements déclencheurs (enveloppe Fineract ou NKULKAP).
+          type: array
+          items:
+            type: string
+    CaseState:
+      type: string
+      enum: [NOUVEAU, EN_REVUE, CLASSE_SANS_SUITE, ESCALADE, DECLARE]
+    CaseLogEntry:
+      type: object
+      required: [at, actor, action]
+      properties:
+        at:
+          type: string
+          format: date-time
+        actor:
+          type: string
+        action:
+          type: string
+        from:
+          $ref: '#/components/schemas/CaseState'
+        to:
+          $ref: '#/components/schemas/CaseState'
+        comment:
+          type: string
+    Case:
+      type: object
+      required: [case_id, state, version, alert_ids, opened_at, log]
+      properties:
+        case_id:
+          type: string
+          format: uuid
+        state:
+          $ref: '#/components/schemas/CaseState'
+        version:
+          type: integer
+          minimum: 1
+        alert_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        client_id:
+          type: integer
+          format: int64
+        assignee:
+          type: string
+        opened_at:
+          type: string
+          format: date-time
+        log:
+          type: array
+          items:
+            $ref: '#/components/schemas/CaseLogEntry'
+    ScreeningRequest:
+      type: object
+      required: [full_name]
+      properties:
+        full_name:
+          type: string
+          maxLength: 300
+        birth_date:
+          type: string
+          format: date
+        nationality:
+          description: Code pays ISO 3166-1 alpha-2.
+          type: string
+          pattern: '^[A-Z]{2}$'
+        client_id:
+          type: integer
+          format: int64
+    ScreeningMatch:
+      type: object
+      required: [match_id, list, listed_name, similarity, status]
+      properties:
+        match_id:
+          type: string
+          format: uuid
+        list:
+          type: string
+          enum: [UN_CONSOLIDATED, NATIONAL, PEP_INTERNAL]
+        listed_name:
+          type: string
+        similarity:
+          description: Similarité Jaro-Winkler après normalisation, en pour mille (entier).
+          type: integer
+          minimum: 0
+          maximum: 1000
+        status:
+          type: string
+          enum: [PENDING_REVIEW, CONFIRMED, FALSE_POSITIVE]
+    ScreeningResult:
+      type: object
+      required: [checked_at, list_versions, matches]
+      properties:
+        checked_at:
+          type: string
+          format: date-time
+        list_versions:
+          type: object
+          additionalProperties:
+            type: string
+        matches:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScreeningMatch'
+    RuleConfig:
+      type: object
+      required: [rule, enabled, params]
+      properties:
+        rule:
+          $ref: '#/components/schemas/RuleId'
+        enabled:
+          type: boolean
+        params:
+          description: Seuils de la règle (montants en unités entières, durées en heures), FICTIFS tant que non fournis par l'EMF.
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          description: Code d'erreur stable NKULKAP, traduit par le client (clés i18n fr et en).
+          type: string

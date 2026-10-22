@@ -1,0 +1,543 @@
+# Copyright (c) 2026 Circaura Sarl. Tous droits réservés.
+# Contrat de nkulkap-pay v1 : mobile money (FR-L6-01 à FR-L6-11), SMS (FR-L6-20 à FR-L6-23), machine à états D.1.
+openapi: 3.1.0
+info:
+  title: NKULKAP Pay API
+  version: 1.0.0
+  summary: Intentions de paiement MTN MoMo et Orange Money, rappels des opérateurs, rapprochement et envoi de SMS.
+  description: |
+    Montants en unités entières de la devise (XAF).
+    L'identifiant d'intention (`intent_id`, UUID fourni par l'appelant) est la clé d'idempotence : il devient
+    `X-Reference-Id` chez l'opérateur et `Idempotency-Key` côté Fineract (FR-L6-04). Une seconde création avec
+    le même `intent_id` renvoie l'intention existante (`200`), jamais une seconde demande à l'opérateur.
+    Les détails des API opérateurs restent **[À VÉRIFIER]** avec les accès marchand.
+  license:
+    name: Propriétaire, Circaura Sarl
+    identifier: LicenseRef-Circaura-Proprietary
+servers:
+  - url: https://pay.nkulkap.example
+    description: Exemple FICTIF
+security:
+  - keycloak: []
+tags:
+  - name: intents
+    description: Intentions de paiement et leur cycle de vie (annexe D.1).
+  - name: callbacks
+    description: Rappels des opérateurs, toujours confirmés par une requête de statut (FR-L6-05).
+  - name: reconciliation
+    description: Rapprochement J+1 avec les relevés des opérateurs (FR-L6-08).
+  - name: notify
+    description: Envoi de SMS idempotent (FR-L6-20 à FR-L6-23).
+paths:
+  /v1/intents:
+    post:
+      tags: [intents]
+      operationId: createIntent
+      summary: Créer une intention de paiement et la soumettre à l'opérateur.
+      parameters:
+        - $ref: '#/components/parameters/TraceParent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntentRequest'
+      responses:
+        '201':
+          description: Intention créée.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Intent'
+        '200':
+          description: Intention déjà existante pour ce `intent_id` (rejeu) ; aucun nouvel appel opérateur.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Intent'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '409':
+          description: Même `intent_id` avec un contenu différent.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Disjoncteur ouvert pour cet opérateur (FR-L6-11) ; la demande n'est pas mise en attente.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    get:
+      tags: [intents]
+      operationId: listIntents
+      summary: Lister les intentions par état ou par compte.
+      parameters:
+        - name: state
+          in: query
+          schema:
+            $ref: '#/components/schemas/IntentState'
+        - name: account_id
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: cursor
+          in: query
+          schema:
+            type: string
+            maxLength: 512
+      responses:
+        '200':
+          description: Page d'intentions.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, has_more]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Intent'
+                  has_more:
+                    type: boolean
+                  next_cursor:
+                    type: string
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+  /v1/intents/{intentId}:
+    get:
+      tags: [intents]
+      operationId: getIntent
+      summary: Lire une intention et son historique d'états.
+      parameters:
+        - $ref: '#/components/parameters/IntentId'
+      responses:
+        '200':
+          description: Intention.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Intent'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+  /v1/intents/{intentId}/resolution:
+    post:
+      tags: [reconciliation]
+      operationId: resolveUnknownIntent
+      summary: Résoudre une intention `UNKNOWN` après rapprochement (maker-checker).
+      parameters:
+        - $ref: '#/components/parameters/IntentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [outcome, evidence]
+              properties:
+                outcome:
+                  type: string
+                  enum: [SUCCEEDED, FAILED]
+                operator_reference:
+                  type: string
+                  maxLength: 100
+                evidence:
+                  description: Justification (référence de relevé, échange avec l'opérateur).
+                  type: string
+                  maxLength: 1000
+      responses:
+        '202':
+          description: Résolution enregistrée, en attente de validation par un second utilisateur.
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          description: L'intention n'est pas à l'état `UNKNOWN`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /v1/callbacks/{operator}/{secret}:
+    post:
+      tags: [callbacks]
+      operationId: receiveOperatorCallback
+      summary: Recevoir le rappel d'un opérateur.
+      description: |
+        Authentifié par le secret de l'URL et la liste d'IP autorisées, pas par Keycloak. Le rappel est
+        dédoublonné puis **toujours confirmé par une requête de statut** avant tout changement d'état.
+        Réponse immédiate `204`, même si le rappel est un doublon.
+      security: []
+      parameters:
+        - name: operator
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Operator'
+        - name: secret
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            maxLength: 128
+      requestBody:
+        required: true
+        description: Corps propre à l'opérateur, conservé tel quel pour audit.
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '204':
+          description: Rappel reçu.
+        '400':
+          $ref: '#/components/responses/Problem'
+        '403':
+          description: Secret ou adresse IP non reconnus.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /v1/reconciliation/statements:
+    post:
+      tags: [reconciliation]
+      operationId: importStatement
+      summary: Importer un relevé opérateur (CSV) pour le rapprochement J+1.
+      parameters:
+        - name: operator
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Operator'
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      requestBody:
+        required: true
+        content:
+          text/csv:
+            schema:
+              type: string
+      responses:
+        '202':
+          description: Relevé accepté ; le rapport d'écarts sera disponible à la fin du traitement.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [statement_id]
+                properties:
+                  statement_id:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '409':
+          description: Relevé déjà importé pour cet opérateur et cette date.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /v1/reconciliation/statements/{statementId}/discrepancies:
+    get:
+      tags: [reconciliation]
+      operationId: listDiscrepancies
+      summary: Lire le rapport d'écarts d'un relevé (4 catégories, FR-L6-08).
+      parameters:
+        - name: statementId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Écarts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Discrepancy'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+  /v1/sms:
+    post:
+      tags: [notify]
+      operationId: sendSms
+      summary: Envoyer un SMS à partir d'un gabarit FR ou EN (GSM-7).
+      description: 'Idempotent sur le couple (`op_id`, `template`) : un rejeu ne renvoie pas le SMS.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SmsRequest'
+      responses:
+        '202':
+          description: SMS accepté pour envoi.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sms'
+        '200':
+          description: SMS déjà demandé pour ce couple (`op_id`, `template`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sms'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+components:
+  securitySchemes:
+    keycloak:
+      type: oauth2
+      description: Jeton d'accès Keycloak (royaume nkulkap), client de service.
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.nkulkap.example/realms/nkulkap/protocol/openid-connect/token
+          scopes: {}
+  parameters:
+    IntentId:
+      name: intentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    TraceParent:
+      name: traceparent
+      in: header
+      required: false
+      description: Contexte de trace W3C.
+      schema:
+        type: string
+        pattern: '^[0-9a-f]{2}-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$'
+  responses:
+    Problem:
+      description: Erreur (RFC 9457).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    Amount:
+      description: Montant en unités entières de la devise.
+      type: integer
+      format: int64
+      minimum: 1
+    Operator:
+      type: string
+      enum: [MTN_MOMO, ORANGE_MONEY]
+    Msisdn:
+      description: Numéro E.164 camerounais.
+      type: string
+      pattern: '^\+2376[0-9]{8}$'
+      examples: ['+237699000001']
+    IntentOperation:
+      type: string
+      enum: [CASH_IN, REPAYMENT, TONTINE, CASH_OUT, DISBURSEMENT]
+    IntentState:
+      description: États de la machine D.1.
+      type: string
+      enum: [CREATED, SUBMITTED, PENDING, SUCCEEDED, FAILED, EXPIRED, UNKNOWN, POSTED, REVERSED]
+    IntentRequest:
+      type: object
+      required: [intent_id, operation, msisdn, account, amount, currency]
+      properties:
+        intent_id:
+          type: string
+          format: uuid
+        operation:
+          $ref: '#/components/schemas/IntentOperation'
+        operator:
+          description: Déduit du préfixe du numéro (FR-L6-09) s'il est absent.
+          $ref: '#/components/schemas/Operator'
+        msisdn:
+          $ref: '#/components/schemas/Msisdn'
+        account:
+          type: object
+          required: [kind, id]
+          properties:
+            kind:
+              type: string
+              enum: [SAVINGS, LOAN, TONTINE]
+            id:
+              type: integer
+              format: int64
+        amount:
+          $ref: '#/components/schemas/Amount'
+        currency:
+          type: string
+          enum: [XAF]
+        language:
+          description: Langue du SMS de résultat.
+          type: string
+          enum: [fr, en]
+          default: fr
+    StateTransition:
+      type: object
+      required: [state, at]
+      properties:
+        state:
+          $ref: '#/components/schemas/IntentState'
+        at:
+          type: string
+          format: date-time
+        reason:
+          type: string
+    Intent:
+      type: object
+      required: [intent_id, operation, operator, msisdn, account, amount, currency, state, created_at, history]
+      properties:
+        intent_id:
+          type: string
+          format: uuid
+        operation:
+          $ref: '#/components/schemas/IntentOperation'
+        operator:
+          $ref: '#/components/schemas/Operator'
+        msisdn:
+          $ref: '#/components/schemas/Msisdn'
+        account:
+          type: object
+          required: [kind, id]
+          properties:
+            kind:
+              type: string
+              enum: [SAVINGS, LOAN, TONTINE]
+            id:
+              type: integer
+              format: int64
+        amount:
+          $ref: '#/components/schemas/Amount'
+        fee_amount:
+          description: Frais TTC (FR-L6-10).
+          type: integer
+          format: int64
+          minimum: 0
+        currency:
+          type: string
+          enum: [XAF]
+        state:
+          $ref: '#/components/schemas/IntentState'
+        operator_reference:
+          type: string
+        fineract_txn_id:
+          type: integer
+          format: int64
+        next_poll_at:
+          description: Prochaine interrogation de statut (calendrier FR-L6-06), à l'état `PENDING`.
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/StateTransition'
+    Discrepancy:
+      type: object
+      required: [category, amount]
+      properties:
+        category:
+          type: string
+          enum: [MISSING_ON_OUR_SIDE, MISSING_AT_OPERATOR, AMOUNT_MISMATCH, DUPLICATE]
+        intent_id:
+          type: string
+          format: uuid
+        operator_reference:
+          type: string
+        amount:
+          $ref: '#/components/schemas/Amount'
+        operator_amount:
+          $ref: '#/components/schemas/Amount'
+        msisdn:
+          $ref: '#/components/schemas/Msisdn'
+        occurred_on:
+          type: string
+          format: date
+    SmsRequest:
+      type: object
+      required: [op_id, template, msisdn, language, params]
+      properties:
+        op_id:
+          type: string
+          format: uuid
+        template:
+          description: Identifiant de gabarit (ex. `op.posted.collecte`).
+          type: string
+          pattern: '^[a-z0-9_.]+$'
+          maxLength: 64
+        msisdn:
+          $ref: '#/components/schemas/Msisdn'
+        language:
+          type: string
+          enum: [fr, en]
+        params:
+          type: object
+          additionalProperties:
+            type: string
+    Sms:
+      type: object
+      required: [sms_id, status]
+      properties:
+        sms_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [QUEUED, SENT, DELIVERED, FAILED]
+        encoding:
+          description: Toujours GSM-7 (accents translittérés, FR-L6-21).
+          type: string
+          enum: [GSM-7]
+        segments:
+          type: integer
+          minimum: 1
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          description: Code d'erreur stable NKULKAP, traduit par le client (clés i18n fr et en).
+          type: string

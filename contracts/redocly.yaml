@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Circaura Sarl. Tous droits réservés.
+# Règles de validation des contrats OpenAPI NKULKAP (étape 2.1).
+apis:
+  sync-v1:
+    root: sync-v1.openapi.yaml
+  pay-v1:
+    root: pay-v1.openapi.yaml
+  sentinel-v1:
+    root: sentinel-v1.openapi.yaml
+extends:
+  - recommended
+rules:
+  # Serveurs d'exemple FICTIFS.
+  no-server-example.com: off
+  operation-4xx-response: error
+  operation-operationId: error
+  operation-summary: error
+  tag-description: error

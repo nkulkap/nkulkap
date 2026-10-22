@@ -1,0 +1,25 @@
+{
+  "type": "record",
+  "name": "OpPostedV1",
+  "namespace": "cm.nkulkap.events.op.v1",
+  "doc": "op.posted : opération synchronisée comptabilisée dans Fineract (FR-L5-09). Déclenche le SMS de confirmation et la surveillance.",
+  "fields": [
+    {"name": "opId", "doc": "Identifiant de l'opération (UUIDv7), Idempotency-Key et externalId côté Fineract (ADR-016).", "type": "string"},
+    {"name": "opType", "doc": "Type d'opération du protocole de synchronisation (annexe C.3).", "type": {"type": "enum", "name": "OpTypeV1", "symbols": ["COLLECTE_DEPOT", "EPARGNE_DEPOT", "EPARGNE_RETRAIT", "PRET_REMBOURSEMENT", "TONTINE_COTISATION", "CLIENT_CREATION"]}},
+    {"name": "deviceId", "doc": "Appareil émetteur.", "type": "string"},
+    {"name": "userId", "doc": "Utilisateur Keycloak ayant saisi l'opération.", "type": "string"},
+    {"name": "officeId", "doc": "Agence Fineract.", "type": "long"},
+    {"name": "account", "doc": "Compte mouvementé.", "type": "cm.nkulkap.events.common.v1.AccountRefV1"},
+    {"name": "amount", "doc": "Montant en unités entières de la devise.", "type": "long"},
+    {"name": "currency", "doc": "Code ISO 4217 (XAF).", "type": "string"},
+    {"name": "fineractTxnId", "doc": "Identifiant de la transaction Fineract.", "type": "long"},
+    {"name": "valueDate", "doc": "Date de valeur retenue (FR-L5-08), format AAAA-MM-JJ.", "type": "string"},
+    {"name": "createdAtDevice", "doc": "Horodatage de saisie sur l'appareil, ISO 8601 avec décalage.", "type": "string"},
+    {"name": "receivedAt", "doc": "Réception par nkulkap-sync, UTC, ISO 8601.", "type": "string"},
+    {"name": "postedAt", "doc": "Comptabilisation dans Fineract, UTC, ISO 8601.", "type": "string"},
+    {"name": "hlc", "doc": "Horloge logique hybride de l'opération.", "type": "string"},
+    {"name": "gps", "doc": "Position à la saisie, si disponible.", "type": ["null", "cm.nkulkap.events.common.v1.GpsV1"], "default": null},
+    {"name": "receiptCode", "doc": "Code court du reçu remis au client.", "type": ["null", "string"], "default": null},
+    {"name": "clientId", "doc": "Client Fineract concerné.", "type": ["null", "long"], "default": null}
+  ]
+}
