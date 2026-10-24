@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright (c) 2026 Circaura Sarl. Tous droits réservés.
+    Journal d'audit en ajout seul des modules NKULKAP (étape 2.6, section 9.1), lu et écrit par AuditService.
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <changeSet author="nkulkap" id="nkulkap-common-0002-audit">
+        <createTable tableName="nkulkap_audit">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="occurred_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="actor" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="action" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entity_type" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entity_id" type="VARCHAR(100)"/>
+            <column name="op_id" type="UUID"/>
+            <column name="details" type="TEXT"/>
+            <column name="prev_hash" type="CHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="hash" type="CHAR(64)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_nkulkap_audit_hash"/>
+            </column>
+        </createTable>
+        <createIndex tableName="nkulkap_audit" indexName="ix_nkulkap_audit_entity">
+            <column name="entity_type"/>
+            <column name="entity_id"/>
+        </createIndex>
+        <createIndex tableName="nkulkap_audit" indexName="ix_nkulkap_audit_op_id">
+            <column name="op_id"/>
+        </createIndex>
+    </changeSet>
+    <!-- Ajout seul : toute modification, suppression ou troncature est refusée par la base elle-même. -->
+    <changeSet author="nkulkap" id="nkulkap-common-0002-audit-append-only" dbms="postgresql">
+        <sql splitStatements="false">
+            CREATE OR REPLACE FUNCTION nkulkap_audit_append_only() RETURNS trigger AS $$
+            BEGIN
+                RAISE EXCEPTION 'nkulkap_audit est en ajout seul : % refusé', TG_OP
+                    USING ERRCODE = 'insufficient_privilege';
+            END;
+            $$ LANGUAGE plpgsql;
+        </sql>
+        <sql>
+            CREATE TRIGGER nkulkap_audit_no_update_delete BEFORE UPDATE OR DELETE ON nkulkap_audit
+                FOR EACH ROW EXECUTE FUNCTION nkulkap_audit_append_only();
+            CREATE TRIGGER nkulkap_audit_no_truncate BEFORE TRUNCATE ON nkulkap_audit
+                FOR EACH STATEMENT EXECUTE FUNCTION nkulkap_audit_append_only();
+        </sql>
+    </changeSet>
+</databaseChangeLog>
