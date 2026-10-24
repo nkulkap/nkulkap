@@ -4,8 +4,10 @@ dependencies {
     implementation(
             'jakarta.annotation:jakarta.annotation-api',
             'jakarta.ws.rs:jakarta.ws.rs-api',
+            'com.fasterxml.jackson.core:jackson-databind',
             'org.springframework:spring-context',
             'org.springframework:spring-jdbc',
+            'org.springframework:spring-tx',
             'org.springframework.boot:spring-boot-autoconfigure',
             )
     // Loan est une entité JPA (Spring Data, tissée par EclipseLink) : ses supertypes doivent être visibles à la compilation.

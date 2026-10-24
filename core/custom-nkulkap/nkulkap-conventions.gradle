@@ -37,3 +37,37 @@ spotless {
         }
     }
 }
+
+// Couverture (JaCoCo) : le plugin est appliqué par Fineract à tous ses sous-projets. Rapports XML et HTML après chaque
+// `test` ; `check` échoue si moins de 90 % des lignes sont couvertes. Un module dont le code n'est qu'un câblage Spring
+// peut désactiver la vérification avec `ext.nkulkapSkipCoverageCheck = true` avant d'appliquer ce fichier.
+tasks.named('test') {
+    finalizedBy tasks.named('jacocoTestReport')
+}
+
+tasks.named('jacocoTestReport') {
+    dependsOn tasks.named('test')
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+tasks.named('jacocoTestCoverageVerification') {
+    dependsOn tasks.named('test')
+    violationRules {
+        rule {
+            element = 'BUNDLE'
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.90
+            }
+        }
+    }
+    enabled = !(project.findProperty('nkulkapSkipCoverageCheck') ?: false)
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('jacocoTestCoverageVerification')
+}
