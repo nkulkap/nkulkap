@@ -30,6 +30,25 @@ make bootstrap  # sous-modules, dépendances, liens
 make up         # lance l'environnement local
 ```
 
+## Poste Windows 11 + WSL2
+
+1. Dans PowerShell : `wsl --install -d Ubuntu-24.04`, puis ouvrir Ubuntu et créer l'utilisateur.
+2. Limiter la mémoire de WSL dans `%USERPROFILE%\.wslconfig`, puis `wsl --shutdown` :
+   ```ini
+   [wsl2]
+   memory=8GB
+   swap=8GB
+   ```
+3. Installer Docker Desktop et activer Settings > Resources > WSL integration pour Ubuntu-24.04.
+4. Dans Ubuntu, installer la chaîne d'outils (git, make, gh, JDK 25, Go, Node 22, Python 3) et cloner le dépôt :
+   ```sh
+   curl -fsSL --retry 3 -o /tmp/setup-poste-wsl.sh https://raw.githubusercontent.com/nkulkap/nkulkap/main/scripts/setup-poste-wsl.sh
+   bash /tmp/setup-poste-wsl.sh --clone
+   ```
+   Depuis un clone existant : `bash scripts/setup-poste-wsl.sh --clone`. Le script est relançable sans dommage ; `--clone [répertoire]` clone dans `~/nkulkap` par défaut puis lance `make bootstrap`.
+
+Travailler dans le système de fichiers WSL (`~/nkulkap`), pas sous `/mnt/c`.
+
 ## Pour aller plus loin
 
 - [Avancement](docs/STATUS.md)
