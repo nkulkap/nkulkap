@@ -45,7 +45,8 @@ public record BalancedJournalEntry(
 
     private static List<Map<String, Object>> lines(List<JournalLine> lines) {
         return lines.stream()
-                .map(l -> Map.<String, Object>of("glAccountId", l.glAccountId(), "amount", l.amount().amount()))
+                .map(l -> Map.<String, Object>of(
+                        "glAccountId", l.glAccountId(), "amount", l.amount().amount()))
                 .toList();
     }
 }

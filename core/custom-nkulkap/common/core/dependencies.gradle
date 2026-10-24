@@ -4,6 +4,7 @@ dependencies {
     implementation(
             'jakarta.annotation:jakarta.annotation-api',
             'jakarta.ws.rs:jakarta.ws.rs-api',
+            'com.fasterxml.jackson.core:jackson-databind',
             'org.springframework:spring-context',
             'org.springframework:spring-jdbc',
             'org.springframework:spring-tx',

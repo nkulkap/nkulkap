@@ -27,7 +27,8 @@ public final class AuditChain {
     private AuditChain() {}
 
     public static String hash(String previousHash, AuditEntry e) {
-        String content = String.join(String.valueOf(SEP),
+        String content = String.join(
+                String.valueOf(SEP),
                 previousHash,
                 e.occurredAt().toString(),
                 e.actor(),
@@ -52,7 +53,8 @@ public final class AuditChain {
         String expectedPrevious = GENESIS;
         for (int i = 0; i < rows.size(); i++) {
             Stored row = rows.get(i);
-            if (!row.previousHash().equals(expectedPrevious) || !row.hash().equals(hash(row.previousHash(), row.entry()))) {
+            if (!row.previousHash().equals(expectedPrevious)
+                    || !row.hash().equals(hash(row.previousHash(), row.entry()))) {
                 return OptionalInt.of(i);
             }
             expectedPrevious = row.hash();

@@ -14,6 +14,11 @@ import org.junit.jupiter.api.Test;
 
 class MoneyTest {
 
+    /** Consomme le résultat d'une opération dont on attend qu'elle échoue (SpotBugs refuse une valeur ignorée). */
+    private static void use(Object result) {
+        assertFalse(result == null);
+    }
+
     @Test
     void holdsWholeUnitsOfXaf() {
         Money m = Money.xaf(150_000);
@@ -32,9 +37,11 @@ class MoneyTest {
     @Test
     void refusesOverflowInsteadOfWrapping() {
         Money max = Money.xaf(Long.MAX_VALUE);
-        assertThrows(ArithmeticException.class, () -> max.plus(Money.xaf(1)));
-        assertThrows(ArithmeticException.class, () -> Money.xaf(Long.MIN_VALUE).minus(Money.xaf(1)));
-        assertThrows(ArithmeticException.class, () -> Money.xaf(Long.MIN_VALUE).negate());
+        assertThrows(ArithmeticException.class, () -> use(max.plus(Money.xaf(1))));
+        assertThrows(
+                ArithmeticException.class, () -> use(Money.xaf(Long.MIN_VALUE).minus(Money.xaf(1))));
+        assertThrows(
+                ArithmeticException.class, () -> use(Money.xaf(Long.MIN_VALUE).negate()));
     }
 
     @Test

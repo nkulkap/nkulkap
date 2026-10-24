@@ -11,6 +11,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import cm.nkulkap.fineract.common.error.NkulkapErrorCode;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanDisbursalBusinessEvent;
@@ -40,7 +41,7 @@ class DisbursalVetoSpikeListenerTest {
         GeneralPlatformDomainRuleException e = assertThrows(
                 GeneralPlatformDomainRuleException.class,
                 () -> listener.onBusinessEvent(eventFor(new ExternalId("TEST-VETO-1"))));
-        assertEquals(DisbursalVetoSpikeListener.ERROR_CODE, e.getGlobalisationMessageCode());
+        assertEquals(NkulkapErrorCode.LOAN_DISBURSAL_VETOED.key(), e.getGlobalisationMessageCode());
     }
 
     @Test

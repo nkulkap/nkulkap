@@ -13,7 +13,13 @@ import java.util.UUID;
  * l'opération à l'origine de l'action, s'il y en a une.
  */
 public record AuditEntry(
-        Instant occurredAt, String actor, String action, String entityType, String entityId, UUID opId, String details) {
+        Instant occurredAt,
+        String actor,
+        String action,
+        String entityType,
+        String entityId,
+        UUID opId,
+        String details) {
 
     public AuditEntry {
         Objects.requireNonNull(occurredAt, "occurredAt");

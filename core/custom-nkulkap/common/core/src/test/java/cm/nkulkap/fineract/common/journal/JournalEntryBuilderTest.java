@@ -42,20 +42,30 @@ class JournalEntryBuilderTest {
                 new Posting("emf:frais_a_repartir", "agent:7", Money.xaf(252)),
                 new Posting("emf:frais_a_repartir", "emf:produits:commissions_momo", Money.xaf(586)));
 
-        BalancedJournalEntry entry = builder().build(2L, LocalDate.of(2026, 10, 21), OP, "Frais de retrait momo", postings);
+        BalancedJournalEntry entry =
+                builder().build(2L, LocalDate.of(2026, 10, 21), OP, "Frais de retrait momo", postings);
 
         // Débit du compte de liaison : une seule ligne, somme des sources identiques.
         assertEquals(List.of(new JournalLine(10L, Money.xaf(1_000))), entry.debits());
-        assertEquals(List.of(new JournalLine(20L, Money.xaf(162)), new JournalLine(30L, Money.xaf(252)),
-                new JournalLine(40L, Money.xaf(586))), entry.credits());
+        assertEquals(
+                List.of(
+                        new JournalLine(20L, Money.xaf(162)),
+                        new JournalLine(30L, Money.xaf(252)),
+                        new JournalLine(40L, Money.xaf(586))),
+                entry.credits());
         assertEquals(Money.xaf(1_000), entry.total());
         assertEquals(OP.toString(), entry.referenceNumber());
     }
 
     @Test
     void producesTheFineractRequestBody() {
-        BalancedJournalEntry entry = builder().build(2L, LocalDate.of(2026, 10, 21), OP, "B.2",
-                List.of(new Posting("emf:frais_a_repartir", "agent:7", Money.xaf(252))));
+        BalancedJournalEntry entry = builder()
+                .build(
+                        2L,
+                        LocalDate.of(2026, 10, 21),
+                        OP,
+                        "B.2",
+                        List.of(new Posting("emf:frais_a_repartir", "agent:7", Money.xaf(252))));
 
         Map<String, Object> body = entry.toFineractRequest();
 
@@ -73,16 +83,34 @@ class JournalEntryBuilderTest {
         LocalDate day = LocalDate.of(2026, 10, 21);
         JournalEntryBuilder b = builder();
         assertThrows(IllegalArgumentException.class, () -> b.build(2L, day, OP, "vide", List.of()));
-        assertThrows(IllegalArgumentException.class, () -> b.build(2L, day, OP, "zéro",
-                List.of(new Posting("emf:frais_a_repartir", "agent:7", Money.xaf(0)))));
-        assertThrows(IllegalArgumentException.class, () -> b.build(2L, day, OP, "négatif",
-                List.of(new Posting("emf:frais_a_repartir", "agent:7", Money.xaf(-1)))));
-        assertThrows(IllegalArgumentException.class, () -> b.build(2L, day, OP, "même compte",
-                List.of(new Posting("agent:7", "agent:7", Money.xaf(10)))));
-        assertThrows(IllegalArgumentException.class, () -> b.build(2L, day, OP, "deux devises",
-                List.of(new Posting("emf:frais_a_repartir", "agent:7", Money.xaf(10)),
-                        new Posting("emf:frais_a_repartir", "agent:7", Money.of(10, Currency.TEST_ONLY)))));
-        assertThrows(UnknownAccountException.class, () -> b.build(2L, day, OP, "compte inconnu",
-                List.of(new Posting("emf:inconnu", "agent:7", Money.xaf(10)))));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> b.build(
+                        2L, day, OP, "zéro", List.of(new Posting("emf:frais_a_repartir", "agent:7", Money.xaf(0)))));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> b.build(
+                        2L,
+                        day,
+                        OP,
+                        "négatif",
+                        List.of(new Posting("emf:frais_a_repartir", "agent:7", Money.xaf(-1)))));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> b.build(2L, day, OP, "même compte", List.of(new Posting("agent:7", "agent:7", Money.xaf(10)))));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> b.build(
+                        2L,
+                        day,
+                        OP,
+                        "deux devises",
+                        List.of(
+                                new Posting("emf:frais_a_repartir", "agent:7", Money.xaf(10)),
+                                new Posting("emf:frais_a_repartir", "agent:7", Money.of(10, Currency.TEST_ONLY)))));
+        assertThrows(
+                UnknownAccountException.class,
+                () -> b.build(
+                        2L, day, OP, "compte inconnu", List.of(new Posting("emf:inconnu", "agent:7", Money.xaf(10)))));
     }
 }

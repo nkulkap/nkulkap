@@ -19,8 +19,13 @@ import org.junit.jupiter.api.Test;
 class AuditChainTest {
 
     private static AuditEntry entry(int i) {
-        return new AuditEntry(Instant.parse("2026-10-21T08:00:00Z").plusSeconds(i), "fictif.caissier", "TOURNEE_RAPPROCHER",
-                "tournee", String.valueOf(500 + i), UUID.fromString("0192f1e2-1111-7aaa-8bbb-00000000000" + i),
+        return new AuditEntry(
+                Instant.parse("2026-10-21T08:00:00Z").plusSeconds(i),
+                "fictif.caissier",
+                "TOURNEE_RAPPROCHER",
+                "tournee",
+                String.valueOf(500 + i),
+                UUID.fromString("0192f1e2-1111-7aaa-8bbb-00000000000" + i),
                 "{\"ecart\":-500}");
     }
 
@@ -61,8 +66,14 @@ class AuditChainTest {
     void detectsAModifiedLine() {
         List<Stored> rows = chain(5);
         Stored original = rows.get(2);
-        AuditEntry altered = new AuditEntry(original.entry().occurredAt(), original.entry().actor(), original.entry().action(),
-                original.entry().entityType(), original.entry().entityId(), original.entry().opId(), "{\"ecart\":0}");
+        AuditEntry altered = new AuditEntry(
+                original.entry().occurredAt(),
+                original.entry().actor(),
+                original.entry().action(),
+                original.entry().entityType(),
+                original.entry().entityId(),
+                original.entry().opId(),
+                "{\"ecart\":0}");
         rows.set(2, new Stored(altered, original.previousHash(), original.hash()));
         assertEquals(OptionalInt.of(2), AuditChain.firstBreak(rows));
     }
@@ -79,8 +90,14 @@ class AuditChainTest {
         // Un attaquant recalcule l'empreinte de la ligne modifiée : la ligne suivante ne se vérifie plus.
         List<Stored> rows = chain(4);
         Stored original = rows.get(1);
-        AuditEntry altered = new AuditEntry(original.entry().occurredAt(), "fictif.admin", original.entry().action(),
-                original.entry().entityType(), original.entry().entityId(), original.entry().opId(), original.entry().details());
+        AuditEntry altered = new AuditEntry(
+                original.entry().occurredAt(),
+                "fictif.admin",
+                original.entry().action(),
+                original.entry().entityType(),
+                original.entry().entityId(),
+                original.entry().opId(),
+                original.entry().details());
         rows.set(1, new Stored(altered, original.previousHash(), AuditChain.hash(original.previousHash(), altered)));
         OptionalInt broken = AuditChain.firstBreak(rows);
         assertTrue(broken.isPresent());

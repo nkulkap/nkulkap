@@ -44,8 +44,15 @@ public class AuditService {
         jdbc.update(
                 "INSERT INTO nkulkap_audit (occurred_at, actor, action, entity_type, entity_id, op_id, details, prev_hash, hash)"
                         + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                Timestamp.from(entry.occurredAt()), entry.actor(), entry.action(), entry.entityType(), entry.entityId(),
-                entry.opId(), entry.details(), previous, hash);
+                Timestamp.from(entry.occurredAt()),
+                entry.actor(),
+                entry.action(),
+                entry.entityType(),
+                entry.entityId(),
+                entry.opId(),
+                entry.details(),
+                previous,
+                hash);
         return hash;
     }
 

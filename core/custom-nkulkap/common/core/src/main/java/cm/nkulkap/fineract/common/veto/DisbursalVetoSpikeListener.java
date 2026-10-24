@@ -4,6 +4,7 @@
  */
 package cm.nkulkap.fineract.common.veto;
 
+import cm.nkulkap.fineract.common.error.NkulkapErrorCode;
 import jakarta.annotation.PostConstruct;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
@@ -25,7 +26,6 @@ import org.springframework.stereotype.Component;
 public class DisbursalVetoSpikeListener implements BusinessEventListener<LoanDisbursalBusinessEvent> {
 
     public static final String VETO_PREFIX = "TEST-VETO";
-    public static final String ERROR_CODE = "error.msg.nkulkap.loan.disbursal.vetoed";
 
     private final BusinessEventNotifierService businessEventNotifierService;
 
@@ -43,9 +43,12 @@ public class DisbursalVetoSpikeListener implements BusinessEventListener<LoanDis
         Loan loan = event.get();
         ExternalId externalId = loan.getExternalId();
         if (externalId != null && !externalId.isEmpty() && externalId.getValue().startsWith(VETO_PREFIX)) {
-            // Le texte par défaut est destiné au développeur ; l'interface traduit ERROR_CODE (fr, en).
+            // Le texte par défaut est destiné au développeur ; l'interface traduit la clé du code LOAN_DISBURSAL_VETOED
+            // (fr, en).
             throw new GeneralPlatformDomainRuleException(
-                    ERROR_CODE, "Disbursal vetoed by NKULKAP for loan " + externalId.getValue(), externalId.getValue());
+                    NkulkapErrorCode.LOAN_DISBURSAL_VETOED.key(),
+                    "Disbursal vetoed by NKULKAP for loan " + externalId.getValue(),
+                    externalId.getValue());
         }
     }
 }

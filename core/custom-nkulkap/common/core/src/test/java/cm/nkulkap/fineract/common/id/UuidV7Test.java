@@ -70,6 +70,16 @@ class UuidV7Test {
     }
 
     @Test
+    void defaultGeneratorUsesTheSystemClock() {
+        long before = System.currentTimeMillis();
+        UUID id = new UuidV7().next();
+        long after = System.currentTimeMillis();
+        long ts = UuidV7.timestampOf(id).toEpochMilli();
+        assertEquals(7, id.version());
+        assertTrue(ts >= before && ts <= after + 1);
+    }
+
+    @Test
     void refusesOtherVersions() {
         assertThrows(IllegalArgumentException.class, () -> UuidV7.timestampOf(UUID.randomUUID()));
     }
